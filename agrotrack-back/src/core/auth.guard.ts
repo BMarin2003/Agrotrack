@@ -11,8 +11,8 @@ export const authPlugin = new Elysia({ name: 'auth-plugin' })
   .macro({
     requirePermission(value: PermisoSlug | PermisoSlug[]) {
       return {
-        async beforeHandle({ user, status }) {
-          if (user?.error) return status(401, { message: user.error });
+        async beforeHandle({ user, set }) {
+          if (user?.error) { set.status = 401; return { message: user.error }; }
 
           if (!value) return;
 
@@ -29,7 +29,8 @@ export const authPlugin = new Elysia({ name: 'auth-plugin' })
           }
 
           if (!hasAccess) {
-            return status(403, { message: 'No tienes los permisos necesarios para realizar esta acción' });
+            set.status = 403;
+            return { message: 'No tienes los permisos necesarios para realizar esta acción' };
           }
         },
       };

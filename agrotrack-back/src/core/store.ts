@@ -1,56 +1,38 @@
-import { RedisClient } from 'bun';
-import { configServer } from 'src/config';
 import { createHash } from 'crypto';
+import { configServer } from 'src/config';
 import { PermisoSlug } from './permisos.type';
 
-export class UserStore {
-  private client: RedisClient;
+class UserStore {
+  private permissions = new Map<string, Set<string>>();
+  private whitelist = new Map<string, number>(); // hash -> expiry timestamp (ms)
 
-  constructor() {
-    this.client = new RedisClient(configServer.redis.url);
-  }
-
-  private async exec<T>(operation: (client: RedisClient) => Promise<T>, retries = 3): Promise<T | null> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await operation(this.client);
-      } catch (error) {
-        console.error(`[Redis] Error en intento ${i + 1}:`, error);
-        if (i === retries - 1) return null;
-        await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
-      }
-    }
-    return null;
-  }
-
-  async setUserPermissions(userId: string, permissions: string[]) {
-    const key = `user:${userId}:permissions`;
-    await this.exec(async c => {
-      await c.del(key);
-      if (permissions && permissions.length > 0) await c.sadd(key, ...permissions);
-    });
+  async setUserPermissions(userId: string, perms: string[]) {
+    this.permissions.set(String(userId), new Set(perms));
   }
 
   async hasPermission(userId: string, permission: PermisoSlug): Promise<boolean> {
-    const key = `user:${userId}:permissions`;
-    const result = await this.exec(c => c.sismember(key, permission));
-    return !!result;
+    return this.permissions.get(String(userId))?.has(permission) ?? false;
   }
 
   async addToken(token: string) {
     const hash = createHash('sha256').update(token).digest('hex');
-    await this.exec(c => c.set(`whitelist:${hash}`, '1', 'EX', configServer.auth.expiresIn));
+    this.whitelist.set(hash, Date.now() + configServer.auth.expiresIn * 1000);
   }
 
   async removeToken(token: string) {
     const hash = createHash('sha256').update(token).digest('hex');
-    await this.exec(c => c.del(`whitelist:${hash}`));
+    this.whitelist.delete(hash);
   }
 
   async isTokenValid(token: string): Promise<boolean> {
     const hash = createHash('sha256').update(token).digest('hex');
-    const result = await this.exec(c => c.exists(`whitelist:${hash}`));
-    return !!result;
+    const expiresAt = this.whitelist.get(hash);
+    if (!expiresAt) return false;
+    if (Date.now() > expiresAt) {
+      this.whitelist.delete(hash);
+      return false;
+    }
+    return true;
   }
 }
 

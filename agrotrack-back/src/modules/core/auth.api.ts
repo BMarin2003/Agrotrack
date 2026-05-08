@@ -9,28 +9,28 @@ const { verifySync } = Bun.password;
 const path = '/auth';
 
 export const AuthApi = new Elysia()
-  .post(`${path}/login`, async ({ body, status, cookie }) => {
+  .post(`${path}/login`, async ({ body, set, cookie }) => {
     const { email, password } = body as { email: string; password: string };
 
     const credentialsResult = await execProcedure('core.get_user_credentials', [{ email }]);
-    if (credentialsResult.error) return status(400, { message: credentialsResult.error });
+    if (credentialsResult.error) { set.status = 400; return { message: credentialsResult.error }; }
 
     const credentials = credentialsResult.result;
     if (!credentials?.id || !credentials?.password_hash) {
-      return status(401, { message: 'Credenciales inválidas' });
+      set.status = 401; return { message: 'Credenciales inválidas' };
     }
     if (credentials.enable === false) {
-      return status(403, { message: 'Cuenta inactiva. Contacte al administrador.' });
+      set.status = 403; return { message: 'Cuenta inactiva. Contacte al administrador.' };
     }
 
     const isPasswordValid = verifySync(password, String(credentials.password_hash));
-    if (!isPasswordValid) return status(401, { message: 'Credenciales inválidas' });
+    if (!isPasswordValid) { set.status = 401; return { message: 'Credenciales inválidas' }; }
 
     const userResult = await execProcedure('core.get_user_login_data', [{ id: credentials.id }]);
-    if (userResult.error) return status(400, { message: userResult.error });
+    if (userResult.error) { set.status = 400; return { message: userResult.error }; }
 
     const user = userResult.result;
-    if (!user) return status(401, { message: 'Credenciales inválidas' });
+    if (!user) { set.status = 401; return { message: 'Credenciales inválidas' }; }
 
     const token = generateToken({ id: user.id, email: user.email, names: user.names, roles: user.roles });
 
@@ -41,7 +41,7 @@ export const AuthApi = new Elysia()
       cookie.session_token.set({
         value: token,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: configServer.isProduction,
         sameSite: 'lax',
         path: '/',
         maxAge: configServer.auth.expiresIn,
@@ -60,12 +60,12 @@ export const AuthApi = new Elysia()
     return { message: 'Logout exitoso' };
   })
 
-  .post(`${path}/verify-token`, async ({ headers, status, cookie }) => {
+  .post(`${path}/verify-token`, async ({ headers, set, cookie }) => {
     const user = await validateToken(headers, cookie);
-    if (user.error) return status(401, { message: user.error });
+    if (user.error) { set.status = 401; return { message: user.error }; }
 
     const userResult = await execProcedure('core.get_user_login_data', [{ id: user.id }]);
-    if (userResult.error) return status(400, { message: userResult.error });
+    if (userResult.error) { set.status = 400; return { message: userResult.error }; }
 
     const token = generateToken({
       id: userResult.result.id,
@@ -81,7 +81,7 @@ export const AuthApi = new Elysia()
       cookie.session_token.set({
         value: token,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: configServer.isProduction,
         sameSite: 'lax',
         path: '/',
         maxAge: configServer.auth.expiresIn,
@@ -95,20 +95,20 @@ export const AuthApi = new Elysia()
 
   .group(path, app => app
     .use(authPlugin)
-    .put('/update-password', async ({ body, user, status }) => {
+    .put('/update-password', async ({ body, user, set }) => {
       const { currentPassword, newPassword } = body as { currentPassword: string; newPassword: string };
 
       const credentialsResult = await execProcedure('core.get_user_credentials', [{ email: (user as any).email }]);
       if (credentialsResult.error || !credentialsResult.result) {
-        return status(400, { message: 'No se pudo verificar la identidad del usuario' });
+        set.status = 400; return { message: 'No se pudo verificar la identidad del usuario' };
       }
 
       const isPasswordValid = verifySync(currentPassword, String(credentialsResult.result.password_hash));
-      if (!isPasswordValid) return status(401, { message: 'La contraseña actual es incorrecta' });
+      if (!isPasswordValid) { set.status = 401; return { message: 'La contraseña actual es incorrecta' }; }
 
       const password_hash = Bun.password.hashSync(newPassword);
       const result = await execProcedure('core.update_user_password', [{ id: (user as any).id, password_hash }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
 
       return { message: 'Contraseña actualizada correctamente' };
     }, {

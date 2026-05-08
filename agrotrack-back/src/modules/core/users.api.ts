@@ -9,18 +9,18 @@ export const UsersApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ status }) => {
+    .get('/', async ({ set }) => {
       const result = await execProcedure('core.list_users', []);
-      if (result.error) return status(500, { message: result.error });
+      if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.admin.manage_users })
 
-    .post('/', async ({ body, status }) => {
+    .post('/', async ({ body, set }) => {
       const data = body as any;
       data.password_hash = Bun.password.hashSync(data.password);
       delete data.password;
       const result = await execProcedure('core.save_user', [data]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, {
       requirePermission: PERMISSIONS.admin.manage_users,
@@ -32,9 +32,9 @@ export const UsersApi = new Elysia()
       }),
     })
 
-    .put('/:id', async ({ params, body, status }) => {
+    .put('/:id', async ({ params, body, set }) => {
       const result = await execProcedure('core.save_user', [{ id: parseInt(params.id), ...(body as any) }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, {
       requirePermission: PERMISSIONS.admin.manage_users,
@@ -46,9 +46,9 @@ export const UsersApi = new Elysia()
       }),
     })
 
-    .delete('/:id', async ({ params, status }) => {
+    .delete('/:id', async ({ params, set }) => {
       const result = await execProcedure('core.delete_user', [{ id: parseInt(params.id) }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.admin.manage_users })
   );
