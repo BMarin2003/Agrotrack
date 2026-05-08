@@ -27,6 +27,11 @@ export const configServer = {
     clientId: process.env.MQTT_CLIENT_ID || `agrotrack-server-${Date.now()}`,
     topicPrefix: 'agrotrack/gateways',
   },
+  mock: {
+    gatewayIdentifier: process.env.MOCK_GATEWAY_IDENTIFIER || 'GW-001',
+    sensorCount: parseInt(process.env.MOCK_SENSOR_COUNT || '6'),
+    intervalMs: parseInt(process.env.MOCK_INTERVAL_MS || '5000'),
+  },
 };
 
 setTimeZone(configServer.timeZone);

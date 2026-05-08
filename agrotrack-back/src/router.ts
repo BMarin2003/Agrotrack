@@ -1,6 +1,7 @@
 import { testDbConnection } from '@core/db/connection';
 import { Elysia } from 'elysia';
 import { readFileSync } from 'fs';
+import { configServer } from './config';
 
 import { AuthApi } from '@modules/core/auth.api';
 import { UsersApi } from '@modules/core/users.api';
@@ -13,30 +14,23 @@ import { ReportsApi } from '@modules/iot/reports.api';
 
 import { TelemetryWs } from '@modules/iot/telemetry.ws';
 
-const handleHome = async ({ status }) => {
-  let version = '';
-  const d = new Date();
-
+const handleHome = async ({ set }: any) => {
   const queryResult = await testDbConnection();
   if (queryResult.error) {
-    return status(500, { message: queryResult.error });
+    set.status = 500;
+    return { message: queryResult.error };
   }
 
-  try {
-    version = readFileSync('deploy.txt').toString();
-  } catch {
-    version = configServer.version;
-  }
+  let version = configServer.version;
+  try { version = readFileSync('deploy.txt').toString(); } catch { /* sin deploy.txt */ }
 
   return {
     message: 'AgroTrack Antigravity API',
     version,
     time: Date.now(),
-    date: d.toISOString(),
+    date: new Date().toISOString(),
   };
 };
-
-import { configServer } from './config';
 
 export const routerApi = new Elysia()
   .get('/', handleHome)

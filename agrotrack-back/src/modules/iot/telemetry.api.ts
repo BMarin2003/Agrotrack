@@ -13,13 +13,13 @@ export const TelemetryApi = new Elysia()
     .use(authPlugin)
 
     // Ingesta HTTP directa (fallback cuando no hay broker MQTT)
-    .post('/ingest', async ({ body, status, headers }) => {
+    .post('/ingest', async ({ body, set, headers }) => {
       const apiKey = headers['x-api-key'];
-      if (!apiKey) return status(401, { message: 'API Key requerida' });
+      if (!apiKey) { set.status = 401; return { message: 'API Key requerida' }; }
 
       const gatewayResult = await execProcedure('iot.get_gateway_by_api_key', [{ api_key: apiKey }]);
       if (gatewayResult.error || !gatewayResult.result) {
-        return status(401, { message: 'Gateway no autorizado' });
+        set.status = 401; return { message: 'Gateway no autorizado' };
       }
 
       const gateway = gatewayResult.result;
@@ -34,7 +34,7 @@ export const TelemetryApi = new Elysia()
         extra_data: payload.extra_data || null,
       }]);
 
-      if (saveResult.error) return status(500, { message: saveResult.error });
+      if (saveResult.error) { set.status = 500; return { message: saveResult.error }; }
 
       const reading = { ...payload, gateway_id: gateway.id, received_at: new Date().toISOString() };
 
@@ -53,10 +53,9 @@ export const TelemetryApi = new Elysia()
       }),
     })
 
-    // Última lectura por gateway (snapshot en tiempo real)
-    .get('/latest/:gateway_id', async ({ params, status }) => {
+    .get('/latest/:gateway_id', async ({ params, set }) => {
       const result = await execProcedure('iot.get_latest_readings_by_gateway', [{ gateway_id: parseInt(params.gateway_id) }]);
-      if (result.error) return status(500, { message: result.error });
+      if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.view_telemetry })
   );

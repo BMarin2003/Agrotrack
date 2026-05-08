@@ -9,21 +9,21 @@ export const ThresholdsApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ query, status }) => {
+    .get('/', async ({ query, set }) => {
       const result = await execProcedure('iot.list_thresholds', [{ sensor_id: query.sensor_id || null }]);
-      if (result.error) return status(500, { message: result.error });
+      if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.manage_thresholds,
       query: t.Object({ sensor_id: t.Optional(t.String()) }),
     })
 
-    .post('/', async ({ body, user, status }) => {
+    .post('/', async ({ body, user, set }) => {
       const result = await execProcedure('iot.upsert_threshold', [{
         ...(body as any),
         user_id: (user as any).id,
       }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.manage_thresholds,
@@ -36,9 +36,9 @@ export const ThresholdsApi = new Elysia()
       }),
     })
 
-    .delete('/:id', async ({ params, status }) => {
+    .delete('/:id', async ({ params, set }) => {
       const result = await execProcedure('iot.delete_threshold', [{ id: parseInt(params.id) }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.manage_thresholds })
   );

@@ -9,12 +9,12 @@ export const AlertsApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ query, status }) => {
+    .get('/', async ({ query, set }) => {
       const result = await execProcedure('iot.get_active_alerts', [{
         gateway_id: query.gateway_id || null,
         resolved: query.resolved === 'true',
       }]);
-      if (result.error) return status(500, { message: result.error });
+      if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.view_alerts,
@@ -24,9 +24,9 @@ export const AlertsApi = new Elysia()
       }),
     })
 
-    .put('/:id/resolve', async ({ params, status }) => {
+    .put('/:id/resolve', async ({ params, set }) => {
       const result = await execProcedure('iot.resolve_alert', [{ id: parseInt(params.id) }]);
-      if (result.error) return status(400, { message: result.error });
+      if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.resolve_alerts })
   );
