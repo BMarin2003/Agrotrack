@@ -3,20 +3,30 @@ import { execProcedure } from '@core/db/connection';
 import { extractToken, generateToken, validateToken } from '@core/jwt';
 import { userStore } from '@core/store';
 import { authPlugin } from '@core/auth.guard';
+import { loginRateLimiter } from '@core/rate-limiter';
 import { configServer } from 'src/config';
 
 const { verifySync } = Bun.password;
 const path = '/auth';
 
 export const AuthApi = new Elysia()
-  .post(`${path}/login`, async ({ body, set, cookie }) => {
+  .post(`${path}/login`, async ({ body, set, cookie, request, server }) => {
     const { email, password } = body as { email: string; password: string };
+
+    const ip = server?.requestIP(request)?.address ?? 'unknown';
+    const rateLimitKey = `${ip}:${email}`;
+    const rateCheck = loginRateLimiter.check(rateLimitKey);
+    if (!rateCheck.allowed) {
+      set.status = 429;
+      return { message: 'Demasiados intentos fallidos. Intenta de nuevo más tarde.', retryAfter: rateCheck.retryAfter };
+    }
 
     const credentialsResult = await execProcedure('core.get_user_credentials', [{ email }]);
     if (credentialsResult.error) { set.status = 400; return { message: credentialsResult.error }; }
 
     const credentials = credentialsResult.result;
     if (!credentials?.id || !credentials?.password_hash) {
+      loginRateLimiter.record(rateLimitKey);
       set.status = 401; return { message: 'Credenciales inválidas' };
     }
     if (credentials.enable === false) {
@@ -24,7 +34,12 @@ export const AuthApi = new Elysia()
     }
 
     const isPasswordValid = verifySync(password, String(credentials.password_hash));
-    if (!isPasswordValid) { set.status = 401; return { message: 'Credenciales inválidas' }; }
+    if (!isPasswordValid) {
+      loginRateLimiter.record(rateLimitKey);
+      set.status = 401; return { message: 'Credenciales inválidas' };
+    }
+
+    loginRateLimiter.reset(rateLimitKey);
 
     const userResult = await execProcedure('core.get_user_login_data', [{ id: credentials.id }]);
     if (userResult.error) { set.status = 400; return { message: userResult.error }; }

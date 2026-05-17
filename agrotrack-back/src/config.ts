@@ -19,6 +19,12 @@ export const configServer = {
     password: process.env.DB_PASSWORD || 'postgres',
     port: parseInt(process.env.DB_PORT || '5432'),
     maxPoolSize: parseInt(process.env.DB_MAX_POOL_SIZE || '10'),
+    ssl: process.env.DB_SSL === 'true',
+  },
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
   mqtt: {
     brokerUrl: process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883',

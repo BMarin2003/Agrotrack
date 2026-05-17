@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bryan\\\\OneDrive\\\\Documentos\\\\CODE\\\\CORALL\\\\AgroTrack\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "Bash(bun add *)",
+      "Bash(bun test *)",
+      "Bash(bun run *)",
+      "Bash(Test-NetConnection *)",
+      "PowerShell(Test-NetConnection *)",
+      "Bash(bun -e ' *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"operador@agrotrack.com\",\"password\":\"Operador2024!\"}')",
+      "Bash(bun -e \"const d=await Bun.stdin.json\\(\\); console.log\\('Status: OK'\\); console.log\\('User:', d.user?.names, '|', d.user?.roles?.[0]?.name\\); console.log\\('Permisos:', d.user?.permisos?.join\\(', '\\)\\); console.log\\('Token \\(primeros 40\\):', d.token?.slice\\(0,40\\)+'...'\\);\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"tecnico@agrotrack.com\",\"password\":\"Tecnico2024!\"}')",
+      "Bash(bun -e \"const d=await Bun.stdin.json\\(\\); console.log\\('Rol:', d.user?.roles?.[0]?.name\\); console.log\\('Permisos:', d.user?.permisos?.join\\(', '\\)\\);\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@agrotrack.com\",\"password\":\"Admin2024!\"}')",
+      "Bash(pkill -f \"bun run src/index.ts\")",
+      "Bash(pkill -f \"src/index.ts\")"
+    ]
+  }
+}

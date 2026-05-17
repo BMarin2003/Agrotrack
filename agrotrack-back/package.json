@@ -10,11 +10,15 @@
     "dev:debug": "bun run --watch --inspect src/index.ts",
     "build": "bun build src/index.ts --target=bun --outfile=build/main.js --env=inline",
     "tsc": "bunx tsc --noEmit",
-    "dev:mock": "MOCK_GATEWAY_IDENTIFIER=GW-001 MOCK_SENSOR_COUNT=3 bun run --watch src/index.ts"
+    "dev:mock": "MOCK_GATEWAY_IDENTIFIER=GW-001 MOCK_SENSOR_COUNT=3 bun run --watch src/index.ts",
+    "seed": "bun run scripts/seed.ts",
+    "test": "bun test tests/",
+    "test:watch": "bun test --watch tests/"
   },
   "dependencies": {
     "@elysiajs/cors": "1.4.1",
     "@elysiajs/openapi": "^1.4.14",
+    "@supabase/supabase-js": "^2.105.4",
     "dotenv": "^17.3.1",
     "elysia": "1.4.25",
     "jsonwebtoken": "9.0.3",
