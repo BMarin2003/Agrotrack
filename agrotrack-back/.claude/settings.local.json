@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr /r /s \"SessionManager\" *.kt)"
+    ]
+  }
+}

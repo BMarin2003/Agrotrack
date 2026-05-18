@@ -1,5 +1,6 @@
 package com.corall.agrotrack.presentation.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -111,4 +112,4 @@ fun DashboardScreen(
 
 // Extensión local para que la Card sea clickable sin importar un modifier externo
 private fun Modifier.clickableWithAnimation(onClick: () -> Unit): Modifier =
-    this.then(androidx.compose.foundation.clickable(onClick = onClick))
+    this.clickable(onClick = onClick)

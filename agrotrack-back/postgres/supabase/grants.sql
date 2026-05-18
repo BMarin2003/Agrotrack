@@ -1,7 +1,3 @@
--- =============================================================================
--- AGROTRACK — Permisos de schemas para Supabase
--- Ejecutar DESPUÉS de migration.sql en Supabase SQL Editor
--- =============================================================================
 
 -- Acceso a los schemas (necesario para PostgREST y el service role)
 GRANT USAGE ON SCHEMA core TO anon, authenticated, service_role;

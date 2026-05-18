@@ -1,15 +1,3 @@
--- =============================================================================
--- AGROTRACK — Migración completa para Supabase
---
--- INSTRUCCIONES:
---   1. Ir a Supabase Dashboard → SQL Editor
---   2. Pegar este archivo completo y ejecutar (Run)
---   3. Ir a Supabase Dashboard → Project Settings → API
---      En "Exposed schemas" añadir:  core, iot
---      (sin esto, el backend no puede llamar los stored procedures vía REST)
---   4. Ejecutar: bun run seed
--- =============================================================================
-
 
 -- ─── EXTENSIONES ──────────────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

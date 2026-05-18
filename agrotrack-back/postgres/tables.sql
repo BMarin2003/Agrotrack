@@ -1,14 +1,3 @@
--- =============================================================================
--- AGROTRACK - ANTIGRAVITY BACKEND
--- Esquema de Base de Datos PostgreSQL
--- Optimizado para telemetría IoT de alta frecuencia (lecturas cada 5s)
---
--- Nota: Para producción con alto volumen considerar:
---   1. TimescaleDB: CREATE EXTENSION timescaledb;
---                   SELECT create_hypertable('iot.sensor_readings', 'received_at');
---   2. Particionamiento nativo por rango de fecha (ver comentario al final)
--- =============================================================================
-
 -- Extensiones
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 

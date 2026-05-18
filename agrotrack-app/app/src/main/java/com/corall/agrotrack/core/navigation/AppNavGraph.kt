@@ -1,9 +1,6 @@
 package com.corall.agrotrack.core.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,8 +17,6 @@ import com.corall.agrotrack.presentation.settings.SettingsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
-    sessionManager: SessionManager = androidx.hilt.navigation.compose.hiltViewModel<com.corall.agrotrack.presentation.auth.LoginViewModel>()
-        .run { SessionManager.provideForNav() }
 ) {
     val startDestination = if (SessionManager.isSessionActive()) Screen.Dashboard.route
                            else Screen.Login.route

@@ -3,7 +3,7 @@ package com.corall.agrotrack.core.security
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,14 +16,14 @@ class SessionManager @Inject constructor(
 ) {
     private val prefs: SharedPreferences by lazy { buildPrefs() }
 
+    init { _instance = this }
+
     private fun buildPrefs(): SharedPreferences {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         return EncryptedSharedPreferences.create(
-            context,
             "agrotrack_session",
-            masterKey,
+            masterKeyAlias,
+            context,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
@@ -55,7 +55,6 @@ class SessionManager @Inject constructor(
     // ── PIN rápido (operadores en planta) ────────────────────────────────────
 
     fun savePin(pin: String) {
-        val hash = Bun.password.hashSync(pin)  // Usar BCrypt via Argon2 compatible
         prefs.edit().putString(KEY_PIN_HASH, hashPin(pin)).apply()
     }
 
@@ -85,6 +84,8 @@ class SessionManager @Inject constructor(
         private const val KEY_PIN_HASH  = "pin_hash"
         private const val KEY_PIN_SALT  = "pin_salt"
 
+        private var _instance: SessionManager? = null
+
         // Estado en memoria (evita leer Prefs en cada comprobación de nav)
         private var _token: String?   = null
         private var _role:  UserRole? = null
@@ -93,7 +94,10 @@ class SessionManager @Inject constructor(
         fun currentRole()     = _role ?: UserRole.OPERATOR
         fun getToken()        = _token
 
-        // Usado temporalmente por AppNavGraph antes de DI estar listo
-        fun provideForNav(): SessionManager? = null
+        fun clearSession() {
+            _instance?.prefs?.edit()?.clear()?.apply()
+            _token = null
+            _role  = null
+        }
     }
 }

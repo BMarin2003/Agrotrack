@@ -1,23 +1,18 @@
-import { supabaseAdmin } from '../supabase';
+import { supabaseAdmin } from "../supabase";
 
-export interface IPgResult { error?: any; result?: any }
+export interface IPgResult {
+  error?: any;
+  result?: any;
+}
 
-/**
- * Ejecuta un stored procedure de PostgreSQL vía Supabase RPC.
- *
- * Convenciones del proyecto:
- *  - Todos los procedures aceptan exactamente un parámetro JSON: p_data
- *  - Los nombres siguen el patrón "schema.function_name"
- *  - Los schemas "core" e "iot" deben estar expuestos en Supabase API Settings
- */
 export async function execProcedure(
   procedureName: string,
   args: any[] | { [key: string]: any },
   _options: { maxRetries?: number } = {},
 ): Promise<IPgResult> {
-  const dotIdx = procedureName.lastIndexOf('.');
-  const schema = dotIdx > -1 ? procedureName.slice(0, dotIdx) : 'public';
-  const fn     = dotIdx > -1 ? procedureName.slice(dotIdx + 1) : procedureName;
+  const dotIdx = procedureName.lastIndexOf(".");
+  const schema = dotIdx > -1 ? procedureName.slice(0, dotIdx) : "public";
+  const fn = dotIdx > -1 ? procedureName.slice(dotIdx + 1) : procedureName;
 
   let p_data: any;
   if (!args || (Array.isArray(args) && args.length === 0)) {
@@ -30,7 +25,10 @@ export async function execProcedure(
 
   const t0 = Date.now();
   try {
-    const { data, error } = await (supabaseAdmin.schema(schema) as any).rpc(fn, { p_data });
+    const { data, error } = await (supabaseAdmin.schema(schema) as any).rpc(
+      fn,
+      { p_data },
+    );
     const ms = Date.now() - t0;
     if (error) {
       console.error(`[DB] Error en ${procedureName}:`, error.message);
@@ -46,18 +44,17 @@ export async function execProcedure(
 }
 
 export async function testDbConnection(): Promise<IPgResult> {
-  const { error } = await (supabaseAdmin.schema('core') as any)
-    .from('roles')
-    .select('id')
+  const { error } = await (supabaseAdmin.schema("core") as any)
+    .from("roles")
+    .select("id")
     .limit(1);
 
   if (error) {
-    console.error('[DB] Error en testDbConnection:', error.message);
+    console.error("[DB] Error en testDbConnection:", error.message);
     return { error: error.message };
   }
-  console.log('[DB] Conexión a Supabase exitosa');
+  console.log("[DB] Conexión a Supabase exitosa");
   return { result: true };
 }
 
-/** No-op: Supabase REST no requiere cerrar conexiones. */
 export async function closeSqlConnection(_timeout?: number): Promise<void> {}
