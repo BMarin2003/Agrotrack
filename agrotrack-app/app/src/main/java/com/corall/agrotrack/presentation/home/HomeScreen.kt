@@ -5,13 +5,23 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.corall.agrotrack.core.security.SessionManager
 import com.corall.agrotrack.core.security.UserRole
 
@@ -26,30 +36,38 @@ data class HomeSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToDashboard:  () -> Unit,
-    onNavigateToGateways:   () -> Unit,
-    onNavigateToAlerts:     () -> Unit,
-    onNavigateToReports:    () -> Unit,
-    onNavigateToInstaller:  () -> Unit,
-    onNavigateToSupport:    () -> Unit,
-    onNavigateToCalibration:() -> Unit,
-    onNavigateToUsers:      () -> Unit,
-    onLogout:               () -> Unit,
+    onNavigateToDashboard:   () -> Unit,
+    onNavigateToGateways:    () -> Unit,
+    onNavigateToAlerts:      () -> Unit,
+    onNavigateToReports:     () -> Unit,
+    onNavigateToInstaller:   () -> Unit,
+    onNavigateToSupport:     () -> Unit,
+    onNavigateToCalibration: () -> Unit,
+    onNavigateToUsers:       () -> Unit,
+    onLogout:                () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val loggedOut by viewModel.loggedOut.collectAsStateWithLifecycle()
+
+    // Cuando el ViewModel confirma que la sesión fue cerrada, navegamos al login
+    LaunchedEffect(loggedOut) {
+        if (loggedOut) onLogout()
+    }
+
     val role = SessionManager.currentRole()
 
     val sections = listOf(
-        HomeSection("Monitoreo",    Icons.Default.Sensors,      "Lecturas en tiempo real",           onNavigateToDashboard),
-        HomeSection("Gateways",     Icons.Default.Router,       "Estado y sensores por gateway",      onNavigateToGateways),
-        HomeSection("Alertas",      Icons.Default.Notifications,"Alertas activas e historial",        onNavigateToAlerts),
-        HomeSection("Reportes",     Icons.Default.BarChart,     "Histórico y descarga de datos",      onNavigateToReports),
-        HomeSection("Instalación",  Icons.Default.Settings,     "WiFi, PIN y tópicos MQTT",           onNavigateToInstaller,
+        HomeSection("Monitoreo",   Icons.Default.Dashboard,     "Lecturas en tiempo real",          onNavigateToDashboard),
+        HomeSection("Gateways",    Icons.Default.Router,        "Estado y sensores por gateway",     onNavigateToGateways),
+        HomeSection("Alertas",     Icons.Default.Notifications, "Alertas activas e historial",       onNavigateToAlerts),
+        HomeSection("Reportes",    Icons.Default.Assessment,    "Histórico y descarga de datos",     onNavigateToReports),
+        HomeSection("Instalación", Icons.Default.Settings,      "WiFi, PIN y tópicos MQTT",          onNavigateToInstaller,
             roles = setOf(UserRole.TECHNICIAN, UserRole.ADMIN)),
-        HomeSection("Soporte",      Icons.Default.Build,        "Mantenimientos y mesa de ayuda",     onNavigateToSupport,
+        HomeSection("Soporte",     Icons.Default.Build,         "Mantenimientos y mesa de ayuda",    onNavigateToSupport,
             roles = setOf(UserRole.TECHNICIAN, UserRole.ADMIN)),
-        HomeSection("Calibración",  Icons.Default.Tune,         "Parámetros remotos de sensores",    onNavigateToCalibration,
+        HomeSection("Calibración", Icons.Default.Tune,          "Parámetros remotos de sensores",   onNavigateToCalibration,
             roles = setOf(UserRole.TECHNICIAN, UserRole.ADMIN)),
-        HomeSection("Usuarios",     Icons.Default.People,       "Gestión de cuentas y perfiles",      onNavigateToUsers,
+        HomeSection("Usuarios",    Icons.Default.People,        "Gestión de cuentas y perfiles",     onNavigateToUsers,
             roles = setOf(UserRole.ADMIN)),
     ).filter { role in it.roles }
 
@@ -58,8 +76,8 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("AgroTrack") },
                 actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
+                    IconButton(onClick = { viewModel.logout() }) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
             )
@@ -72,14 +90,14 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
-                text  = "Bienvenido, ${SessionManager.getUserName()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                text     = "Bienvenido, ${SessionManager.getUserName()}",
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(bottom = 12.dp),
             )
 
             LazyVerticalGrid(
-                columns             = GridCells.Fixed(2),
+                columns               = GridCells.Fixed(2),
                 verticalArrangement   = Arrangement.spacedBy(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -103,10 +121,13 @@ private fun SectionCard(section: HomeSection) {
         ) {
             Icon(section.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column {
-                Text(section.title,       style = MaterialTheme.typography.titleSmall)
-                Text(section.description, style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    maxLines = 1)
+                Text(section.title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    text     = section.description,
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    maxLines = 1,
+                )
             }
         }
     }

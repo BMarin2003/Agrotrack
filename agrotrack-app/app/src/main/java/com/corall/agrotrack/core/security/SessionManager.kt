@@ -49,8 +49,9 @@ class SessionManager @Inject constructor(
 
     fun clearSession() {
         prefs.edit().clear().apply()
-        _token = null
-        _role  = null
+        _token    = null
+        _role     = null
+        _userName = ""
     }
 
     // ── PIN rápido (operadores en planta) ────────────────────────────────────
@@ -99,8 +100,9 @@ class SessionManager @Inject constructor(
 
         fun clearSession() {
             _instance?.prefs?.edit()?.clear()?.apply()
-            _token = null
-            _role  = null
+            _token    = null
+            _role     = null
+            _userName = ""
         }
     }
 }

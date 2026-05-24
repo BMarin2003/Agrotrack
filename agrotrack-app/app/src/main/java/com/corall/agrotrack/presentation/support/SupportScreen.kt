@@ -3,7 +3,7 @@ package com.corall.agrotrack.presentation.support
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.HeadsetMic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,7 +29,7 @@ fun SupportScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToHelpDesk) {
-                        Icon(Icons.Default.SupportAgent, contentDescription = "Mesa de ayuda")
+                        Icon(Icons.Default.HeadsetMic, contentDescription = "Mesa de ayuda")
                     }
                 }
             )

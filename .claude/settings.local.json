@@ -18,7 +18,10 @@
       "Bash(bun -e \"const d=await Bun.stdin.json\\(\\); console.log\\('Rol:', d.user?.roles?.[0]?.name\\); console.log\\('Permisos:', d.user?.permisos?.join\\(', '\\)\\);\")",
       "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@agrotrack.com\",\"password\":\"Admin2024!\"}')",
       "Bash(pkill -f \"bun run src/index.ts\")",
-      "Bash(pkill -f \"src/index.ts\")"
+      "Bash(pkill -f \"src/index.ts\")",
+      "Bash(dir /s /b)",
+      "Bash(findstr /i \"test\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bryan\\\\OneDrive\\\\Documentos\\\\CODE\\\\CORALL\\\\AgroTrack\" -Recurse -Directory -Filter \"*test*\")"
     ]
   }
 }

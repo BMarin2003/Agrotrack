@@ -69,8 +69,8 @@ fun AppNavGraph(
                     if (SessionManager.currentRole() == UserRole.ADMIN)
                         navController.navigate(Screen.Users.route)
                 },
+                // LogoutUseCase ya limpió la sesión; aquí solo navegamos
                 onLogout = {
-                    SessionManager.clearSession()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
