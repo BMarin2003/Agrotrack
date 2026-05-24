@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,8 +24,9 @@ import com.corall.agrotrack.presentation.dashboard.components.SensorCard
 @Composable
 fun DashboardScreen(
     onNavigateToAlerts:   () -> Unit,
-    onNavigateToReports:  (Int) -> Unit,
+    onNavigateToReports:  () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToUsers:    () -> Unit,
     onLogout:             () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -48,10 +50,17 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Configuración — SOLO TÉCNICO
+                    // Configuración — Técnico y Superadmin
                     if (uiState.isTechnician) {
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "Configuración")
+                        }
+                    }
+
+                    // Gestión de usuarios — solo Superadmin
+                    if (uiState.isAdmin) {
+                        IconButton(onClick = onNavigateToUsers) {
+                            Icon(Icons.Default.People, contentDescription = "Usuarios")
                         }
                     }
                 }
@@ -99,7 +108,7 @@ fun DashboardScreen(
                             SensorCard(
                                 reading  = reading,
                                 modifier = Modifier.clickableWithAnimation {
-                                    onNavigateToReports(reading.sensorId)
+                                    onNavigateToReports()
                                 },
                             )
                         }

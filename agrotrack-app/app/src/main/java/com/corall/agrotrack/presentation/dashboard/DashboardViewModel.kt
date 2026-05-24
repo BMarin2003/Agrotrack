@@ -38,7 +38,11 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        _uiState.update { it.copy(isTechnician = sessionManager.getRole() == UserRole.TECHNICIAN) }
+        val role = sessionManager.getRole()
+        _uiState.update { it.copy(
+            isTechnician = role == UserRole.TECHNICIAN || role == UserRole.ADMIN,
+            isAdmin      = role == UserRole.ADMIN,
+        ) }
         observeNetwork()
         observeWsState()
         observeLiveEvents()

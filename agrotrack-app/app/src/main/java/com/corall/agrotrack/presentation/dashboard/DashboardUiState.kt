@@ -13,6 +13,7 @@ data class DashboardUiState(
     val isLoading:        Boolean               = true,
     val error:            String?               = null,
     val isTechnician:     Boolean               = false,
+    val isAdmin:          Boolean               = false,
 ) {
     val isOnline: Boolean get() = networkStatus == NetworkStatus.Available
     val isWsLive: Boolean get() = wsState == WsConnectionState.Connected

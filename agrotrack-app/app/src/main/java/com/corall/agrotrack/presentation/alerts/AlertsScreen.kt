@@ -60,7 +60,7 @@ fun AlertsScreen(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             )
                         }
-                        if (!alert.resolved) {
+                        if (!alert.resolved && uiState.canResolve) {
                             IconButton(onClick = { viewModel.resolve(alert.id) }) {
                                 Icon(Icons.Default.CheckCircle, null, tint = StatusNormal)
                             }

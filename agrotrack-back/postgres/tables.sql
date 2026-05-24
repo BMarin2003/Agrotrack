@@ -153,8 +153,8 @@ CREATE INDEX IF NOT EXISTS idx_thresholds_sensor
 
 INSERT INTO core.roles (name, description) VALUES
     ('Administrador', 'Acceso total al sistema'),
-    ('Operador',      'Monitoreo y gestión de sensores'),
-    ('Auditor',       'Solo lectura de reportes y alertas')
+    ('Técnico',       'Gestión de sensores, umbrales y resolución de alertas'),
+    ('Operador',      'Monitoreo de sensores y visualización de alertas')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO core.permissions (name, slug) VALUES
@@ -169,3 +169,34 @@ INSERT INTO core.permissions (name, slug) VALUES
     ('Gestionar usuarios',  'admin.manage_users'),
     ('Gestionar roles',     'admin.manage_roles')
 ON CONFLICT (slug) DO NOTHING;
+
+-- Permisos por rol
+-- Administrador: acceso total
+INSERT INTO core.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM core.roles r, core.permissions p
+WHERE r.name = 'Administrador'
+ON CONFLICT DO NOTHING;
+
+-- Técnico: gestión IoT sin administración de usuarios/roles
+INSERT INTO core.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM core.roles r
+JOIN core.permissions p ON p.slug IN (
+    'iot.view_sensors', 'iot.manage_sensors', 'iot.view_telemetry',
+    'iot.view_alerts',  'iot.resolve_alerts', 'iot.manage_thresholds',
+    'iot.view_reports', 'iot.manage_gateways'
+)
+WHERE r.name = 'Técnico'
+ON CONFLICT DO NOTHING;
+
+-- Operador: solo lectura y visualización
+INSERT INTO core.role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM core.roles r
+JOIN core.permissions p ON p.slug IN (
+    'iot.view_sensors', 'iot.view_telemetry',
+    'iot.view_alerts',  'iot.view_reports'
+)
+WHERE r.name = 'Operador'
+ON CONFLICT DO NOTHING;

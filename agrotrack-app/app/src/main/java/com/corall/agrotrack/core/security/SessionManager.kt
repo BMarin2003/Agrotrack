@@ -8,7 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class UserRole { OPERATOR, TECHNICIAN }
+enum class UserRole { OPERATOR, TECHNICIAN, ADMIN }
 
 @Singleton
 class SessionManager @Inject constructor(
@@ -36,8 +36,9 @@ class SessionManager @Inject constructor(
             .putString(KEY_USER_NAME, userName)
             .putString(KEY_ROLE, role.name)
             .apply()
-        _token = token
-        _role  = role
+        _token    = token
+        _role     = role
+        _userName = userName
     }
 
     fun getToken(): String?  = prefs.getString(KEY_TOKEN, null)
@@ -87,12 +88,14 @@ class SessionManager @Inject constructor(
         private var _instance: SessionManager? = null
 
         // Estado en memoria (evita leer Prefs en cada comprobación de nav)
-        private var _token: String?   = null
-        private var _role:  UserRole? = null
+        private var _token:    String?   = null
+        private var _role:     UserRole? = null
+        private var _userName: String    = ""
 
         fun isSessionActive() = _token != null
         fun currentRole()     = _role ?: UserRole.OPERATOR
         fun getToken()        = _token
+        fun getUserName()     = _userName
 
         fun clearSession() {
             _instance?.prefs?.edit()?.clear()?.apply()
