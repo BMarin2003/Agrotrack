@@ -36,7 +36,7 @@ class WatchdogService {
     }
   }
 
-  private async check() {
+  async check() {
     const now = Date.now();
 
     for (const [sensorId, data] of heartbeats) {
