@@ -58,4 +58,11 @@ export const TelemetryApi = new Elysia()
       if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.view_telemetry })
+
+    .get('/sensor/:sensor_id/last', async ({ params, set }) => {
+      const result = await execProcedure('iot.get_last_reading_by_sensor', [{ sensor_id: parseInt(params.sensor_id) }]);
+      if (result.error) { set.status = 500; return { message: result.error }; }
+      if (!result.result) { set.status = 404; return { message: 'Sin lecturas registradas para este sensor' }; }
+      return result.result;
+    }, { requirePermission: PERMISSIONS.iot.view_telemetry })
   );
