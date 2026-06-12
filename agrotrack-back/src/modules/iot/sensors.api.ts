@@ -72,4 +72,25 @@ export const SensorsApi = new Elysia()
         location: t.Optional(t.String()),
       }),
     })
+
+    .put('/gateways/:id/wifi', async ({ params, body, set }) => {
+      const result = await execProcedure('iot.update_gateway_wifi', [{
+        id:       parseInt(params.id),
+        ssid:     (body as any).ssid,
+        security: (body as any).security ?? 'WPA2',
+      }]);
+      if (result.error) { set.status = 400; return { message: result.error }; }
+      return { ok: true, gateway_id: parseInt(params.id), ssid: (body as any).ssid };
+    }, {
+      requirePermission: PERMISSIONS.iot.manage_gateways,
+      body: t.Object({
+        ssid:     t.String(),
+        password: t.Optional(t.String()),
+        security: t.Optional(t.Union([
+          t.Literal('WPA2'),
+          t.Literal('WPA3'),
+          t.Literal('open'),
+        ])),
+      }),
+    })
   );
