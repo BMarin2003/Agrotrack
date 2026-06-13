@@ -16,20 +16,12 @@ interface SensorReadingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(readings: List<SensorReadingEntity>)
 
-    // Última lectura por sensor (snapshot del dashboard)
-    @Query("""
-        SELECT * FROM sensor_readings
-        WHERE gatewayId = :gatewayId
-        GROUP BY sensorId
-        HAVING receivedAt = MAX(receivedAt)
-        ORDER BY sensorId
-    """)
+    @Query("SELECT * FROM sensor_readings WHERE gatewayId = :gatewayId ORDER BY receivedAt DESC")
     fun observeLatestByGateway(gatewayId: Int): Flow<List<SensorReadingEntity>>
 
-    @Query("SELECT * FROM sensor_readings WHERE sensorId = :sensorId ORDER BY receivedAt DESC LIMIT :limit")
-    suspend fun getHistory(sensorId: Int, limit: Int = 500): List<SensorReadingEntity>
+    @Query("SELECT * FROM sensor_readings WHERE sensorId = :sensorId ORDER BY receivedAt DESC LIMIT 1")
+    suspend fun getLatestBySensor(sensorId: Int): SensorReadingEntity?
 
-    // Purga lecturas con más de 7 días para controlar el tamaño de la BD
-    @Query("DELETE FROM sensor_readings WHERE receivedAt < :cutoff")
-    suspend fun purgeOlderThan(cutoff: Long)
+    @Query("DELETE FROM sensor_readings WHERE receivedAt < :timestamp")
+    suspend fun deleteOlderThan(timestamp: Long)
 }

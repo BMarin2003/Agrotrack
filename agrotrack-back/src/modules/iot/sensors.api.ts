@@ -9,25 +9,65 @@ export const SensorsApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ query, set }) => {
-      const result = await execProcedure('iot.list_sensors', [{ gateway_id: query.gateway_id || null }]);
-      if (result.error) { set.status = 500; return { message: result.error }; }
+    .get('/gateways', async ({ set }) => {
+      const result = await execProcedure('iot.list_gateways', []);
+
+      if (result.error) {
+        set.status = 500;
+        return { message: result.error };
+      }
+
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.view_sensors,
-      query: t.Object({ gateway_id: t.Optional(t.String()) }),
+    })
+
+    .get('/', async ({ query, set }) => {
+      const result = await execProcedure('iot.list_sensors', [
+        { gateway_id: query.gateway_id || null },
+      ]);
+
+      if (result.error) {
+        set.status = 500;
+        return { message: result.error };
+      }
+
+      return result.result;
+    }, {
+      requirePermission: PERMISSIONS.iot.view_sensors,
+      query: t.Object({
+        gateway_id: t.Optional(t.String()),
+      }),
     })
 
     .get('/:id', async ({ params, set }) => {
-      const result = await execProcedure('iot.get_sensor', [{ id: parseInt(params.id) }]);
-      if (result.error) { set.status = 500; return { message: result.error }; }
-      if (!result.result) { set.status = 404; return { message: 'Sensor no encontrado' }; }
+      const result = await execProcedure('iot.get_sensor', [
+        { id: parseInt(params.id) },
+      ]);
+
+      if (result.error) {
+        set.status = 500;
+        return { message: result.error };
+      }
+
+      if (!result.result) {
+        set.status = 404;
+        return { message: 'Sensor no encontrado' };
+      }
+
       return result.result;
-    }, { requirePermission: PERMISSIONS.iot.view_sensors })
+    }, {
+      requirePermission: PERMISSIONS.iot.view_sensors,
+    })
 
     .post('/', async ({ body, set }) => {
       const result = await execProcedure('iot.save_sensor', [body]);
-      if (result.error) { set.status = 400; return { message: result.error }; }
+
+      if (result.error) {
+        set.status = 400;
+        return { message: result.error };
+      }
+
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.manage_sensors,
@@ -42,8 +82,15 @@ export const SensorsApi = new Elysia()
     })
 
     .put('/:id', async ({ params, body, set }) => {
-      const result = await execProcedure('iot.save_sensor', [{ id: parseInt(params.id), ...(body as any) }]);
-      if (result.error) { set.status = 400; return { message: result.error }; }
+      const result = await execProcedure('iot.save_sensor', [
+        { id: parseInt(params.id), ...(body as any) },
+      ]);
+
+      if (result.error) {
+        set.status = 400;
+        return { message: result.error };
+      }
+
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.manage_sensors,
@@ -54,15 +101,14 @@ export const SensorsApi = new Elysia()
       }),
     })
 
-    .get('/gateways', async ({ set }) => {
-      const result = await execProcedure('iot.list_gateways', []);
-      if (result.error) { set.status = 500; return { message: result.error }; }
-      return result.result;
-    }, { requirePermission: PERMISSIONS.iot.manage_gateways })
-
     .post('/gateways', async ({ body, set }) => {
       const result = await execProcedure('iot.save_gateway', [body]);
-      if (result.error) { set.status = 400; return { message: result.error }; }
+
+      if (result.error) {
+        set.status = 400;
+        return { message: result.error };
+      }
+
       return result.result;
     }, {
       requirePermission: PERMISSIONS.iot.manage_gateways,
@@ -71,5 +117,5 @@ export const SensorsApi = new Elysia()
         identifier: t.String(),
         location: t.Optional(t.String()),
       }),
-    })
+    }),
   );
