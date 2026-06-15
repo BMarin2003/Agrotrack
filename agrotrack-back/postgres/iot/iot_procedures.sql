@@ -7,17 +7,41 @@
 
 CREATE OR REPLACE FUNCTION iot.list_gateways(p_data JSON DEFAULT '{}')
 RETURNS JSON AS $$
-DECLARE v_result JSON;
+DECLARE
+    v_result JSON;
 BEGIN
     SELECT JSON_AGG(
         JSON_BUILD_OBJECT(
-            'id',         g.id,
-            'name',       g.name,
+            'id', g.id,
+            'name', g.name,
             'identifier', g.identifier,
-            'location',   g.location,
-            'enable',     g.enable
-        ) ORDER BY g.id
-    ) INTO v_result FROM iot.gateways g;
+            'location', g.location,
+            'enable', g.enable,
+            'sensor_count', COALESCE(sc.sensor_count, 0),
+            'status',
+                CASE
+                    WHEN g.enable = FALSE THEN 'maintenance'
+                    WHEN lr.last_reading_at >= NOW() - INTERVAL '30 seconds' THEN 'online'
+                    ELSE 'offline'
+                END,
+            'last_reading_at', lr.last_reading_at
+        )
+        ORDER BY g.id
+    )
+    INTO v_result
+    FROM iot.gateways g
+    LEFT JOIN (
+        SELECT gateway_id, COUNT(*)::INTEGER AS sensor_count
+        FROM iot.sensors
+        WHERE enable = TRUE
+        GROUP BY gateway_id
+    ) sc ON sc.gateway_id = g.id
+    LEFT JOIN LATERAL (
+        SELECT MAX(r.received_at) AS last_reading_at
+        FROM iot.sensor_readings r
+        WHERE r.gateway_id = g.id
+    ) lr ON TRUE;
+
     RETURN COALESCE(v_result, '[]'::JSON);
 END;
 $$ LANGUAGE plpgsql;
@@ -175,20 +199,43 @@ $$ LANGUAGE plpgsql;
 -- Última lectura por cada sensor del gateway (snapshot en tiempo real)
 CREATE OR REPLACE FUNCTION iot.get_latest_readings_by_gateway(p_data JSON)
 RETURNS JSON AS $$
-DECLARE v_result JSON;
+DECLARE
+    v_result JSON;
 BEGIN
-    SELECT JSON_AGG(t ORDER BY t.sensor_id)
+    SELECT JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id', t.id,
+            'sensor_id', t.sensor_id,
+            'gateway_id', t.gateway_id,
+            'sensor_name', t.sensor_name,
+            'unit', t.unit,
+            'temperature', t.temperature,
+            'voltage', t.voltage,
+            'battery', t.battery,
+            'extra_data', t.extra_data,
+            'received_at', t.received_at
+        )
+        ORDER BY t.sensor_id
+    )
     INTO v_result
     FROM (
         SELECT DISTINCT ON (r.sensor_id)
-            r.id, r.sensor_id, s.name AS sensor_name, s.unit,
-            r.temperature, r.voltage, r.battery, r.extra_data,
+            r.id,
+            r.sensor_id,
+            r.gateway_id,
+            s.name AS sensor_name,
+            s.unit,
+            r.temperature,
+            r.voltage,
+            r.battery,
+            r.extra_data,
             r.received_at
         FROM iot.sensor_readings r
         JOIN iot.sensors s ON s.id = r.sensor_id
         WHERE r.gateway_id = (p_data->>'gateway_id')::INTEGER
         ORDER BY r.sensor_id, r.received_at DESC
     ) t;
+
     RETURN COALESCE(v_result, '[]'::JSON);
 END;
 $$ LANGUAGE plpgsql;

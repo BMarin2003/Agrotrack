@@ -9,15 +9,20 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TelemetryApiService {
+
     @GET("telemetry/latest/{gatewayId}")
-    suspend fun getLatestReadings(@Path("gatewayId") gatewayId: Int): Response<List<SensorReadingDto>>
+    suspend fun getLatestReadings(
+        @Path("gatewayId") gatewayId: Int,
+    ): Response<List<SensorReadingDto>>
 
     @GET("alerts")
     suspend fun getActiveAlerts(
         @Query("gateway_id") gatewayId: Int,
-        @Query("resolved")   resolved: Boolean = false,
+        @Query("resolved") resolved: Boolean = false,
     ): Response<List<AlertDto>>
 
     @PUT("alerts/{id}/resolve")
-    suspend fun resolveAlert(@Path("id") alertId: Long): Response<Unit>
+    suspend fun resolveAlert(
+        @Path("id") alertId: Long,
+    ): Response<Unit>
 }

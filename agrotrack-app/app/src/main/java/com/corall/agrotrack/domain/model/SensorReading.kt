@@ -9,6 +9,6 @@ data class SensorReading(
     val temperature: Double?,
     val voltage: Double?,
     val battery: Double?,
-    val receivedAt: Long,       // epoch ms
+    val receivedAt: Long,
     val status: SensorStatus = SensorStatus.Normal,
 )
