@@ -253,7 +253,7 @@ class TelemetryRepositoryImpl @Inject constructor(
     private fun statusFromReceivedAt(receivedAt: Long): SensorStatus {
         if (receivedAt <= 0L) return SensorStatus.Offline
 
-        return if (System.currentTimeMillis() - receivedAt > 30_000) {
+        return if (System.currentTimeMillis() - receivedAt > 90_000) {
             SensorStatus.Offline
         } else {
             SensorStatus.Normal

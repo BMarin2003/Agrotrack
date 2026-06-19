@@ -1,8 +1,8 @@
 import { execProcedure } from '@core/db/connection';
 import { broadcastToAll } from '@modules/iot/telemetry.ws';
 
-const OFFLINE_THRESHOLD_MS = 30_000; // 30 segundos
-const CHECK_INTERVAL_MS = 10_000;    // revisar cada 10 segundos
+const OFFLINE_THRESHOLD_MS = parseInt(process.env.WATCHDOG_OFFLINE_MS || '90000');
+const CHECK_INTERVAL_MS = 15_000;
 
 // sensor_id -> { gateway_id, last_seen }
 const heartbeats = new Map<number, { gateway_id: number; last_seen: number }>();

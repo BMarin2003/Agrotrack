@@ -23,7 +23,7 @@ class GetGatewaySensorsUseCase @Inject constructor(
             val status = when {
                 !sensor.enable -> SensorStatus.Offline
                 receivedAt == null -> SensorStatus.Offline
-                now - receivedAt > 30_000 -> SensorStatus.Offline
+                now - receivedAt > 90_000 -> SensorStatus.Offline
                 else -> reading.status
             }
 
