@@ -72,7 +72,7 @@ object MockData {
         thresholdStore[config.sensorId] = config
     }
 
-    val mockAlerts: MutableList<Alert> = mutableListOf()
+    val mockAlerts: MutableList<Alert> = java.util.concurrent.CopyOnWriteArrayList()
 
     fun addMockAlert(alert: Alert) {
         mockAlerts.add(0, alert)

@@ -14,6 +14,7 @@ import com.corall.agrotrack.domain.repository.TelemetryRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -29,6 +30,7 @@ class MockAlertForegroundService : Service() {
 
     private val simulator = MockTemperatureSimulator()
     private val scope     = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var simulationJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -37,7 +39,9 @@ class MockAlertForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(MOCK_SERVICE_NOTIF_ID, buildServiceNotification())
-        scope.launch { runSimulationLoop() }
+        if (simulationJob == null || simulationJob?.isActive == false) {
+            simulationJob = scope.launch { runSimulationLoop() }
+        }
         return START_STICKY
     }
 

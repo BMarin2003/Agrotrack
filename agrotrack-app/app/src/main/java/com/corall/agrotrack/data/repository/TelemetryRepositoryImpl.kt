@@ -92,6 +92,8 @@ class TelemetryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun resolveAlert(alertId: Long): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) { alertDao.resolve(alertId); return@runCatching }
+
         val response = api.resolveAlert(alertId)
 
         if (!response.isSuccessful) {

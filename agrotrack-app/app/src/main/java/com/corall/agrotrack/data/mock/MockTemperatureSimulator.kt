@@ -14,15 +14,20 @@ class MockTemperatureSimulator {
     var currentTemp: Double = 22.0
         private set
 
-    private var drift       = 0.3
+    private var drift              = 0.3
     private var silentSince: Long? = null
-    private var alertIdSeq  = 10_000L
+    private var offlineAlertEmitted: Boolean = false
+    private var alertIdSeq         = 10_000L
 
     fun tick(now: Long = System.currentTimeMillis()): Alert? {
         // 1. MODO SILENCIO
         silentSince?.let { since ->
-            return if (now - since > 30_000L) {
-                if (Random.nextDouble() < 0.20) silentSince = null
+            return if (now - since <= 30_000L) {
+                // Grace period — sensor still in warm-up, no alert yet
+                null
+            } else if (!offlineAlertEmitted) {
+                // First tick past grace period — emit exactly one offline alert
+                offlineAlertEmitted = true
                 buildAlert(
                     type      = "sensor_offline",
                     metric    = null,
@@ -31,6 +36,11 @@ class MockTemperatureSimulator {
                     message   = "Sensor $sensorId offline",
                 )
             } else {
+                // Alert already emitted — check for recovery
+                if (Random.nextDouble() < 0.20) {
+                    silentSince = null
+                    offlineAlertEmitted = false
+                }
                 null
             }
         }
@@ -39,17 +49,16 @@ class MockTemperatureSimulator {
         currentTemp += drift + Random.nextDouble(-0.4, 0.4)
         if (currentTemp < -5.0 || currentTemp > 45.0) drift = -drift
 
-        // 3. SPIKE
+        // 3. SPIKE — uses a local variable so currentTemp is NOT modified
         if (Random.nextDouble() < SPIKE_PROBABILITY) {
-            val sign  = if (Random.nextBoolean()) 1.0 else -1.0
-            val delta = Random.nextDouble(8.0, 12.0) * sign
-            currentTemp += delta
+            val sign      = if (Random.nextBoolean()) 1.0 else -1.0
+            val spikeTemp = currentTemp + Random.nextDouble(8.0, 12.0) * sign
             return buildAlert(
                 type      = "anomalous_reading",
                 metric    = "temperature",
-                value     = currentTemp,
+                value     = spikeTemp,
                 threshold = null,
-                message   = "Lectura anómala: ${"%.1f".format(currentTemp)}°C",
+                message   = "Lectura anómala: ${"%.1f".format(spikeTemp)}°C",
             )
         }
 
