@@ -68,9 +68,10 @@ class MockAlertForegroundService : Service() {
             NotificationChannel(
                 CHANNEL_MOCK_SERVICE,
                 "Servicio de simulación",
-                NotificationManager.IMPORTANCE_LOW,
+                NotificationManager.IMPORTANCE_MIN,
             ).apply {
-                description = "Notificación persistente del simulador (solo desarrollo)"
+                description = "Notificación silenciosa del simulador (solo desarrollo)"
+                setShowBadge(false)
             }
         )
     }
@@ -80,8 +81,10 @@ class MockAlertForegroundService : Service() {
             .setSmallIcon(android.R.drawable.ic_popup_sync)
             .setContentTitle("Simulación de alertas activa")
             .setContentText("Generando alertas mock para testing — solo en desarrollo")
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
+            .setShowWhen(false)
+            .setSilent(true)
             .build()
 
     override fun onBind(intent: Intent?): IBinder? = null
