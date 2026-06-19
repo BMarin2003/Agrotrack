@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,33 +37,48 @@ fun AlertsScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
-            contentPadding     = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(padding),
-        ) {
-            items(uiState.alerts, key = { it.id }) { alert ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (alert.resolved) StatusNormal.copy(0.1f)
-                                         else StatusCritical.copy(0.1f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+        if (uiState.alerts.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text  = "Sin alertas activas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                )
+            }
+        } else {
+            LazyColumn(
+                contentPadding      = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier            = Modifier.padding(padding),
+            ) {
+                items(uiState.alerts, key = { it.id }) { alert ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (alert.resolved) StatusNormal.copy(0.1f)
+                                             else StatusCritical.copy(0.1f)
+                        )
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(alert.message, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                "Sensor ${alert.sensorId}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            )
-                        }
-                        if (!alert.resolved && uiState.canResolve) {
-                            IconButton(onClick = { viewModel.resolve(alert.id) }) {
-                                Icon(Icons.Default.CheckCircle, null, tint = StatusNormal)
+                        Row(
+                            modifier              = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(alert.message, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "Sensor ${alert.sensorId}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                )
+                            }
+                            if (!alert.resolved && uiState.canResolve) {
+                                IconButton(onClick = { viewModel.resolve(alert.id) }) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = StatusNormal)
+                                }
                             }
                         }
                     }

@@ -5,7 +5,7 @@ import kotlin.random.Random
 
 class MockTemperatureSimulator {
 
-    var SPIKE_PROBABILITY   = 0.02
+    var SPIKE_PROBABILITY   = 0.08
     var SILENCE_PROBABILITY = 0.05
 
     private val sensorId  = 1

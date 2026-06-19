@@ -49,6 +49,8 @@ class MockAlertForegroundService : Service() {
         while (true) {
             delay(Random.nextLong(15_000L, 45_000L))
             val alert = simulator.tick()
+            MockData.currentSensorTemp   = simulator.currentTemp
+            MockData.lastReadingTimestamp = System.currentTimeMillis()
             if (alert != null) {
                 MockData.addMockAlert(alert)
                 telemetryRepository.cacheAlert(alert)
