@@ -41,4 +41,8 @@ class AlertsViewModel @Inject constructor(
     fun resolve(alertId: Long) {
         viewModelScope.launch { repository.resolveAlert(alertId) }
     }
+
+    fun clearAll() {
+        viewModelScope.launch { repository.clearAllAlerts() }
+    }
 }

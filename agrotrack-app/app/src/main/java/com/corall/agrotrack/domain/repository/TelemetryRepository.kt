@@ -14,6 +14,7 @@ interface TelemetryRepository {
     fun getCachedAlerts(): Flow<List<Alert>>
     suspend fun cacheAlert(alert: Alert)
     suspend fun resolveAlert(alertId: Long): Result<Unit>
+    suspend fun clearAllAlerts(): Result<Unit>
     suspend fun getThresholdConfig(sensorId: Int): Result<ThresholdConfig?>
     suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit>
 }

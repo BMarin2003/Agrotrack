@@ -6,9 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,6 +24,23 @@ fun AlertsScreen(
     viewModel: AlertsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showConfirm by remember { mutableStateOf(false) }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title   = { Text("Eliminar todas las alertas") },
+            text    = { Text("Se eliminarán ${uiState.alerts.size} alertas permanentemente. ¿Continuar?") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearAll(); showConfirm = false }) {
+                    Text("Eliminar", color = StatusCritical)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) { Text("Cancelar") }
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -32,6 +49,17 @@ fun AlertsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    if (uiState.alerts.isNotEmpty() && uiState.canResolve) {
+                        IconButton(onClick = { showConfirm = true }) {
+                            Icon(
+                                Icons.Default.DeleteSweep,
+                                contentDescription = "Eliminar todas",
+                                tint = StatusCritical,
+                            )
+                        }
                     }
                 }
             )

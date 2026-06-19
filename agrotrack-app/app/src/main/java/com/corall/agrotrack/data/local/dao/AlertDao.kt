@@ -21,4 +21,7 @@ interface AlertDao {
 
     @Query("UPDATE alerts SET resolved = 1 WHERE id = :id")
     suspend fun resolve(id: Long)
+
+    @Query("DELETE FROM alerts")
+    suspend fun deleteAll()
 }

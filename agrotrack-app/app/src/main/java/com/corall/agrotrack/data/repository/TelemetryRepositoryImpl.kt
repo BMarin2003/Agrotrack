@@ -106,6 +106,18 @@ class TelemetryRepositoryImpl @Inject constructor(
         alertDao.resolve(alertId)
     }
 
+    override suspend fun clearAllAlerts(): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) { alertDao.deleteAll(); return@runCatching }
+
+        val response = api.clearAllAlerts()
+
+        if (!response.isSuccessful) {
+            error("No se pudieron eliminar las alertas")
+        }
+
+        alertDao.deleteAll()
+    }
+
     override suspend fun getThresholdConfig(sensorId: Int): Result<ThresholdConfig?> = runCatching {
         if (MockConfig.ENABLED) return@runCatching MockData.getThresholdConfig(sensorId)
 

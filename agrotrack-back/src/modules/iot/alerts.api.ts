@@ -1,5 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { execProcedure } from '@core/db/connection';
+import { supabaseAdmin } from '@core/supabase';
 import { authPlugin } from '@core/auth.guard';
 import { PERMISSIONS } from '@core/permissions.constants';
 
@@ -28,5 +29,14 @@ export const AlertsApi = new Elysia()
       const result = await execProcedure('iot.resolve_alert', [{ id: parseInt(params.id) }]);
       if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
+    }, { requirePermission: PERMISSIONS.iot.resolve_alerts })
+
+    .delete('/clear', async ({ set }) => {
+      const { error } = await (supabaseAdmin.schema('iot') as any)
+        .from('alerts')
+        .delete()
+        .gt('id', 0);
+      if (error) { set.status = 500; return { message: error.message }; }
+      return { ok: true };
     }, { requirePermission: PERMISSIONS.iot.resolve_alerts })
   );

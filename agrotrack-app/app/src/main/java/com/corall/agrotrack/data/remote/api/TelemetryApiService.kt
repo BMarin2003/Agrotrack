@@ -6,6 +6,7 @@ import com.corall.agrotrack.data.remote.dto.ThresholdItemDto
 import com.corall.agrotrack.data.remote.dto.ThresholdUpsertDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -34,6 +35,9 @@ interface TelemetryApiService {
     suspend fun resolveAlert(
         @Path("id") alertId: Long,
     ): Response<Unit>
+
+    @DELETE("alerts/clear")
+    suspend fun clearAllAlerts(): Response<Unit>
 
     @GET("thresholds")
     suspend fun getThresholds(
