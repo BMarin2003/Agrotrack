@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Mock ForegroundService — remover cuando MockConfig.ENABLED = false -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:name=".AgroTrackApp"
@@ -40,6 +43,12 @@
             </intent-filter>
         </service>
         -->
+
+        <!-- Mock alert simulator — solo desarrollo, remover al integrar FCM -->
+        <service
+            android:name=".core.notification.MockAlertForegroundService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
 
     </application>
 </manifest>
