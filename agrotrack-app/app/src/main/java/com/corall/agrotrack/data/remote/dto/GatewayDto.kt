@@ -11,4 +11,5 @@ data class GatewayDto(
     @SerializedName("sensor_count") val sensorCount: Int?,
     @SerializedName("status") val status: String?,
     @SerializedName("last_reading_at") val lastReadingAt: String?,
+    @SerializedName("battery") val battery: Double? = null,
 )

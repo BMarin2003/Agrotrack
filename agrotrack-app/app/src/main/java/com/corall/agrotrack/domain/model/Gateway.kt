@@ -9,4 +9,5 @@ data class Gateway(
     val sensorCount: Int,
     val status: GatewayStatus,
     val lastReadingAt: Long?,
+    val battery: Double? = null,
 )

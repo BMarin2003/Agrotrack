@@ -2,6 +2,7 @@ package com.corall.agrotrack.presentation.gateways
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.corall.agrotrack.domain.repository.GatewayRepository
 import com.corall.agrotrack.domain.usecase.gateway.GetGatewaySensorsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GatewayDetailViewModel @Inject constructor(
     private val getGatewaySensors: GetGatewaySensorsUseCase,
+    private val gatewayRepository: GatewayRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GatewayDetailUiState())
@@ -30,6 +32,7 @@ class GatewayDetailViewModel @Inject constructor(
 
         currentGatewayId = gatewayId
         pollingJob?.cancel()
+        _uiState.update { it.copy(gatewayId = gatewayId) }
 
         pollingJob = viewModelScope.launch {
             load(gatewayId, isInitialLoad = true)
@@ -38,6 +41,19 @@ class GatewayDetailViewModel @Inject constructor(
                 delay(10_000)
                 load(gatewayId, isInitialLoad = false)
             }
+        }
+    }
+
+    fun openWifiDialog()  { _uiState.update { it.copy(wifiDialogOpen = true,  wifiSuccess = false, wifiError = null) } }
+    fun closeWifiDialog() { _uiState.update { it.copy(wifiDialogOpen = false, wifiError = null) } }
+
+    fun saveWifi(ssid: String, password: String?, security: String) {
+        val gatewayId = currentGatewayId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(wifiSaving = true, wifiError = null) }
+            gatewayRepository.updateGatewayWifi(gatewayId, ssid, password, security)
+                .onSuccess { _uiState.update { it.copy(wifiSaving = false, wifiSuccess = true, wifiDialogOpen = false) } }
+                .onFailure { e -> _uiState.update { it.copy(wifiSaving = false, wifiError = e.message) } }
         }
     }
 
@@ -54,12 +70,15 @@ class GatewayDetailViewModel @Inject constructor(
                 }
             }
 
+            val gateway = gatewayRepository.getGatewayById(gatewayId).getOrNull()
+
             getGatewaySensors(gatewayId)
                 .onSuccess { sensors ->
                     _uiState.update { state ->
                         state.copy(
                             isLoading = false,
-                            gatewayName = sensors.firstOrNull()?.gatewayName.orEmpty(),
+                            gatewayName = gateway?.name ?: sensors.firstOrNull()?.gatewayName.orEmpty(),
+                            gatewayBattery = gateway?.battery,
                             sensors = sensors,
                             error = null,
                         )
