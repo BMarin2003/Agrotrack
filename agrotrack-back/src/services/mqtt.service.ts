@@ -21,6 +21,8 @@ class MqttService {
   private client: mqtt.MqttClient | null = null;
   // Cache: "gatewayId:slaveIdentifier" → sensor DB id
   private sensorCache = new Map<string, number>();
+  // Tracking de Slaves únicos para diagnóstico
+  private uniqueSlaves = new Set<string>();
 
   connect() {
     const { brokerUrl, username, password, clientId, topicPrefix, topicSubscribe } = configServer.mqtt;
@@ -99,6 +101,12 @@ class MqttService {
 
       const payload: TwarmPayload = JSON.parse(rawMessage.toString());
 
+      // Diagnóstico: registrar Slaves únicos vistos
+      if (!this.uniqueSlaves.has(payload.Slave)) {
+        this.uniqueSlaves.add(payload.Slave);
+        console.log(`[MQTT] Slave nuevo: ${payload.Slave} (total únicos: ${this.uniqueSlaves.size}) → [${[...this.uniqueSlaves].join(', ')}]`);
+      }
+
       const gatewayResult = await execProcedure('iot.get_gateway_by_identifier', [{ identifier: gatewayIdentifier }]);
       if (gatewayResult.error || !gatewayResult.result) {
         console.warn(`[MQTT] Gateway no registrado: ${gatewayIdentifier}`);
@@ -139,7 +147,7 @@ class MqttService {
         received_at: new Date().toISOString(),
       };
 
-      watchdogService.heartbeat(sensorId);
+      watchdogService.heartbeat(sensorId, gateway.id);
       await rulesEngine.evaluate(reading);
       broadcastToGateway(gateway.id, { type: 'reading', data: reading });
 
