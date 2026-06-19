@@ -22,3 +22,5 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+graphify-out/
+.codegraph/
