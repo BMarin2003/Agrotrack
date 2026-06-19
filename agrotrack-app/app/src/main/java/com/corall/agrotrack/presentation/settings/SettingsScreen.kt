@@ -12,7 +12,7 @@ import com.corall.agrotrack.core.security.SessionManager
 import com.corall.agrotrack.core.security.UserRole
 
 /**
- * Pantalla exclusiva para TECHNICIAN.
+ * Pantalla para TECHNICIAN y ADMIN.
  * La navegación a esta pantalla ya está bloqueada en AppNavGraph cuando el rol es OPERATOR.
  * Este check es una segunda línea de defensa en la UI.
  */
@@ -21,7 +21,7 @@ import com.corall.agrotrack.core.security.UserRole
 fun SettingsScreen(onBack: () -> Unit) {
     val role = SessionManager.currentRole()
 
-    if (role != UserRole.TECHNICIAN) {
+    if (role != UserRole.TECHNICIAN && role != UserRole.ADMIN) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("Acceso restringido", style = MaterialTheme.typography.titleLarge)
         }
