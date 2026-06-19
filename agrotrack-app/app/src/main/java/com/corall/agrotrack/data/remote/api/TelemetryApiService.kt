@@ -2,8 +2,12 @@ package com.corall.agrotrack.data.remote.api
 
 import com.corall.agrotrack.data.remote.dto.AlertDto
 import com.corall.agrotrack.data.remote.dto.SensorReadingDto
+import com.corall.agrotrack.data.remote.dto.ThresholdItemDto
+import com.corall.agrotrack.data.remote.dto.ThresholdUpsertDto
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -15,6 +19,11 @@ interface TelemetryApiService {
         @Path("gatewayId") gatewayId: Int,
     ): Response<List<SensorReadingDto>>
 
+    @GET("telemetry/sensor/{sensorId}/last")
+    suspend fun getLastReading(
+        @Path("sensorId") sensorId: Int,
+    ): Response<SensorReadingDto>
+
     @GET("alerts")
     suspend fun getActiveAlerts(
         @Query("gateway_id") gatewayId: Int,
@@ -25,4 +34,14 @@ interface TelemetryApiService {
     suspend fun resolveAlert(
         @Path("id") alertId: Long,
     ): Response<Unit>
+
+    @GET("thresholds")
+    suspend fun getThresholds(
+        @Query("sensor_id") sensorId: Int,
+    ): Response<List<ThresholdItemDto>>
+
+    @POST("thresholds")
+    suspend fun upsertThreshold(
+        @Body body: ThresholdUpsertDto,
+    ): Response<ThresholdItemDto>
 }

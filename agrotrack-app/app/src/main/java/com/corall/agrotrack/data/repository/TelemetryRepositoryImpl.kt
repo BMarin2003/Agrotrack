@@ -4,12 +4,16 @@ import com.corall.agrotrack.data.local.dao.AlertDao
 import com.corall.agrotrack.data.local.dao.SensorReadingDao
 import com.corall.agrotrack.data.local.entity.AlertEntity
 import com.corall.agrotrack.data.local.entity.SensorReadingEntity
+import com.corall.agrotrack.data.mock.MockConfig
+import com.corall.agrotrack.data.mock.MockData
 import com.corall.agrotrack.data.remote.api.TelemetryApiService
 import com.corall.agrotrack.data.remote.dto.AlertDto
 import com.corall.agrotrack.data.remote.dto.SensorReadingDto
+import com.corall.agrotrack.data.remote.dto.ThresholdUpsertDto
 import com.corall.agrotrack.domain.model.Alert
 import com.corall.agrotrack.domain.model.SensorReading
 import com.corall.agrotrack.domain.model.SensorStatus
+import com.corall.agrotrack.domain.model.ThresholdConfig
 import com.corall.agrotrack.domain.repository.TelemetryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,6 +27,8 @@ class TelemetryRepositoryImpl @Inject constructor(
 ) : TelemetryRepository {
 
     override suspend fun getLatestReadings(gatewayId: Int): Result<List<SensorReading>> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching MockData.latestReadings(gatewayId)
+
         val response = api.getLatestReadings(gatewayId)
 
         if (!response.isSuccessful) {
@@ -36,6 +42,15 @@ class TelemetryRepositoryImpl @Inject constructor(
         }
 
         readings
+    }
+
+    override suspend fun getLastReading(sensorId: Int): Result<SensorReading?> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching MockData.lastReadingForSensor(sensorId)
+
+        val response = api.getLastReading(sensorId)
+        if (response.code() == 404) return@runCatching null
+        if (!response.isSuccessful) error("No se pudo obtener la última lectura")
+        response.body()?.toDomain()
     }
 
     override fun getCachedReadings(gatewayId: Int): Flow<List<SensorReading>> {
@@ -82,6 +97,46 @@ class TelemetryRepositoryImpl @Inject constructor(
         }
 
         alertDao.resolve(alertId)
+    }
+
+    override suspend fun getThresholdConfig(sensorId: Int): Result<ThresholdConfig?> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching MockData.getThresholdConfig(sensorId)
+
+        val response = api.getThresholds(sensorId)
+        if (!response.isSuccessful) error("No se pudo obtener la configuración de umbrales")
+        val items = response.body().orEmpty()
+        val temp  = items.firstOrNull { it.metric == "temperature" } ?: return@runCatching null
+        ThresholdConfig(
+            sensorId      = sensorId,
+            minThreshold  = temp.minValue,
+            maxThreshold  = temp.maxValue,
+            alertsEnabled = temp.minValue != null || temp.maxValue != null,
+        )
+    }
+
+    override suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) {
+            MockData.saveThresholdConfig(config)
+            return@runCatching
+        }
+
+        // Validación HU-AL4: si alertsEnabled=false enviamos null en los valores para desactivar
+        // el disparo de alertas, pero el cliente conserva la configuración localmente.
+        val (minVal, maxVal) = if (config.alertsEnabled) {
+            config.minThreshold to config.maxThreshold
+        } else {
+            null to null
+        }
+
+        val response = api.upsertThreshold(
+            ThresholdUpsertDto(
+                sensorId = config.sensorId,
+                metric   = "temperature",
+                minValue = minVal,
+                maxValue = maxVal,
+            )
+        )
+        if (!response.isSuccessful) error("No se pudo actualizar la configuración de umbrales")
     }
 
     private fun SensorReadingDto.toDomain(): SensorReading {
