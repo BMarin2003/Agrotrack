@@ -19,7 +19,7 @@ class MqttService {
   private client: mqtt.MqttClient | null = null;
 
   connect() {
-    const { brokerUrl, username, password, clientId, topicPrefix } = configServer.mqtt;
+    const { brokerUrl, username, password, clientId, topicPrefix, topicSubscribe } = configServer.mqtt;
 
     this.client = mqtt.connect(brokerUrl, {
       clientId,
@@ -31,10 +31,12 @@ class MqttService {
 
     this.client.on('connect', () => {
       console.log(`[MQTT] Conectado a ${brokerUrl}`);
-      // Suscripción wildcard: escucha todos los gateways
-      this.client!.subscribe(`${topicPrefix}/+/telemetry`, err => {
+      // Si MQTT_TOPIC_SUBSCRIBE está definido, usar topic fijo del dispositivo.
+      // Si no, usar wildcard estándar agrotrack/gateways/+/telemetry.
+      const topic = topicSubscribe || `${topicPrefix}/+/telemetry`;
+      this.client!.subscribe(topic, err => {
         if (err) console.error('[MQTT] Error al suscribirse:', err);
-        else console.log(`[MQTT] Suscrito a ${topicPrefix}/+/telemetry`);
+        else console.log(`[MQTT] Suscrito a ${topic}`);
       });
     });
 
@@ -49,9 +51,16 @@ class MqttService {
 
   private async handleMessage(topic: string, rawMessage: Buffer) {
     try {
-      // topic: agrotrack/gateways/{gateway_identifier}/telemetry
-      const parts = topic.split('/');
-      const gatewayIdentifier = parts[2];
+      const { topicSubscribe, gatewayUid, topicPrefix } = configServer.mqtt;
+
+      // Si usamos topic fijo, el gateway identifier viene de MQTT_GATEWAY_UID.
+      // Si usamos wildcard, se extrae del topic: agrotrack/gateways/{identifier}/telemetry
+      let gatewayIdentifier: string;
+      if (topicSubscribe) {
+        gatewayIdentifier = gatewayUid;
+      } else {
+        gatewayIdentifier = topic.split('/')[2];
+      }
 
       const payload: GatewayPayload = JSON.parse(rawMessage.toString());
 

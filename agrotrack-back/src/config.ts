@@ -27,11 +27,15 @@ export const configServer = {
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
   mqtt: {
+    enabled: process.env.MQTT_ENABLED === 'true',
     brokerUrl: process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883',
     username: process.env.MQTT_USERNAME || '',
     password: process.env.MQTT_PASSWORD || '',
     clientId: process.env.MQTT_CLIENT_ID || `agrotrack-server-${Date.now()}`,
     topicPrefix: 'agrotrack/gateways',
+    // Si el dispositivo publica en un topic fijo, configurar estas dos variables:
+    topicSubscribe: process.env.MQTT_TOPIC_SUBSCRIBE || '',
+    gatewayUid: process.env.MQTT_GATEWAY_UID || '',
   },
   mock: {
     gatewayIdentifier: process.env.MOCK_GATEWAY_IDENTIFIER || 'GW-001',

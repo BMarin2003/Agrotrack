@@ -4,7 +4,7 @@ import { gatewayMockService } from "@services/gateway.service";
 import { configServer } from "src/config";
 
 export const bootServer = async () => {
-  if (configServer.isProduction) {
+  if (configServer.mqtt.enabled) {
     mqttService.connect();
   } else {
     gatewayMockService.start();
