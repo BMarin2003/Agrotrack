@@ -16,7 +16,16 @@ interface SensorReadingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(readings: List<SensorReadingEntity>)
 
-    @Query("SELECT * FROM sensor_readings WHERE gatewayId = :gatewayId ORDER BY receivedAt DESC")
+    @Query("""
+        SELECT * FROM sensor_readings
+        WHERE gatewayId = :gatewayId
+          AND receivedAt = (
+              SELECT MAX(s2.receivedAt) FROM sensor_readings s2
+              WHERE s2.sensorId = sensor_readings.sensorId
+                AND s2.gatewayId = :gatewayId
+          )
+        ORDER BY receivedAt DESC
+    """)
     fun observeLatestByGateway(gatewayId: Int): Flow<List<SensorReadingEntity>>
 
     @Query("SELECT * FROM sensor_readings WHERE sensorId = :sensorId ORDER BY receivedAt DESC LIMIT 1")
