@@ -29,8 +29,8 @@ android {
         debug {
             isDebuggable   = true
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/\"")
-            buildConfigField("String", "WS_BASE_URL",  "\"ws://10.0.2.2:3000/ws/\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.15.13:3000/api/\"")
+            buildConfigField("String", "WS_BASE_URL",  "\"ws://192.168.15.13:3000/ws/\"")
         }
         release {
             isMinifyEnabled = true
