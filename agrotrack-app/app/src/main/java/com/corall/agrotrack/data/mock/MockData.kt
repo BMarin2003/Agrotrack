@@ -1,5 +1,6 @@
 package com.corall.agrotrack.data.mock
 
+import com.corall.agrotrack.domain.model.Alert
 import com.corall.agrotrack.domain.model.Gateway
 import com.corall.agrotrack.domain.model.GatewayStatus
 import com.corall.agrotrack.domain.model.Sensor
@@ -69,5 +70,11 @@ object MockData {
 
     fun saveThresholdConfig(config: ThresholdConfig) {
         thresholdStore[config.sensorId] = config
+    }
+
+    val mockAlerts: MutableList<Alert> = mutableListOf()
+
+    fun addMockAlert(alert: Alert) {
+        mockAlerts.add(0, alert)
     }
 }

@@ -64,6 +64,8 @@ class TelemetryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getActiveAlerts(gatewayId: Int): Result<List<Alert>> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching MockData.mockAlerts.toList()
+
         val response = api.getActiveAlerts(gatewayId)
 
         if (!response.isSuccessful) {
