@@ -31,6 +31,7 @@ class MockAlertForegroundService : Service() {
     private val simulator = MockTemperatureSimulator()
     private val scope     = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var simulationJob: Job? = null
+    private var heartbeatJob:  Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -41,8 +42,16 @@ class MockAlertForegroundService : Service() {
         startForeground(MOCK_SERVICE_NOTIF_ID, buildServiceNotification())
         if (simulationJob == null || simulationJob?.isActive == false) {
             simulationJob = scope.launch { runSimulationLoop() }
+            heartbeatJob  = scope.launch { runHeartbeat() }
         }
         return START_STICKY
+    }
+
+    private suspend fun runHeartbeat() {
+        while (true) {
+            MockData.lastReadingTimestamp = System.currentTimeMillis()
+            delay(10_000L)
+        }
     }
 
     private suspend fun runSimulationLoop() {

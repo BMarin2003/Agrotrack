@@ -17,16 +17,22 @@ object MockData {
             identifier    = "GW-TWARM-001",
             location      = "Almacén Central",
             enable        = true,
-            sensorCount   = 1,
+            sensorCount   = 6,
             status        = GatewayStatus.Online,
             lastReadingAt = System.currentTimeMillis() - 15_000,
             battery       = 73.0,
         )
     )
 
-    // Solo sensor 1 (S-001) tiene hardware físico conectado.
+    // Sensor 1 (S-001) es el único con hardware físico conectado — recibe datos del simulador.
+    // Los sensores 2-6 existen en el sistema pero no envían datos todavía.
     val sensors: List<Sensor> = listOf(
-        Sensor(id = 1, gatewayId = 1, gatewayName = "Gateway Principal", name = "Temp A1", identifier = "S-001", type = "temperature", unit = "°C", location = "Zona A – Sector 1", enable = true),
+        Sensor(id = 1, gatewayId = 1, gatewayName = "Gateway Principal", name = "Temp A1",    identifier = "S-001", type = "temperature", unit = "°C", location = "Zona A – Sector 1", enable = true),
+        Sensor(id = 2, gatewayId = 1, gatewayName = "Gateway Principal", name = "Temp A2",    identifier = "S-002", type = "temperature", unit = "°C", location = "Zona A – Sector 2", enable = true),
+        Sensor(id = 3, gatewayId = 1, gatewayName = "Gateway Principal", name = "Temp B1",    identifier = "S-003", type = "temperature", unit = "°C", location = "Zona B – Sector 1", enable = true),
+        Sensor(id = 4, gatewayId = 1, gatewayName = "Gateway Principal", name = "Temp B2",    identifier = "S-004", type = "temperature", unit = "°C", location = "Zona B – Sector 2", enable = true),
+        Sensor(id = 5, gatewayId = 1, gatewayName = "Gateway Principal", name = "Humedad C1", identifier = "S-005", type = "humidity",    unit = "%",  location = "Zona C – Sector 1", enable = true),
+        Sensor(id = 6, gatewayId = 1, gatewayName = "Gateway Principal", name = "Voltaje",    identifier = "S-006", type = "voltage",     unit = "V",  location = "Panel Principal",   enable = true),
     )
 
     // Temperatura actual del simulador — actualizada por MockAlertForegroundService en cada tick.
