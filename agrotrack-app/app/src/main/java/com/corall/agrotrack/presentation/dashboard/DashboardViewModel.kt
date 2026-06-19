@@ -3,6 +3,7 @@ package com.corall.agrotrack.presentation.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.corall.agrotrack.core.network.WebSocketManager
+import com.corall.agrotrack.core.notification.AlertNotificationHelper
 import com.corall.agrotrack.core.security.SessionManager
 import com.corall.agrotrack.core.security.UserRole
 import com.corall.agrotrack.core.util.ConnectivityObserver
@@ -26,12 +27,13 @@ private const val DEFAULT_GATEWAY_ID = 1
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val wsManager:          WebSocketManager,
+    private val wsManager:            WebSocketManager,
     private val connectivityObserver: ConnectivityObserver,
-    private val sessionManager:     SessionManager,
-    private val getLatestReadings:  GetLatestReadingsUseCase,
-    private val observeLive:        ObserveLiveReadingsUseCase,
-    private val telemetryRepository: TelemetryRepository,
+    private val sessionManager:       SessionManager,
+    private val getLatestReadings:    GetLatestReadingsUseCase,
+    private val observeLive:          ObserveLiveReadingsUseCase,
+    private val telemetryRepository:  TelemetryRepository,
+    private val notificationHelper:   AlertNotificationHelper,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -90,6 +92,7 @@ class DashboardViewModel @Inject constructor(
                     }
                     is LiveEvent.NewAlert -> {
                         viewModelScope.launch { telemetryRepository.cacheAlert(event.data) }
+                        notificationHelper.showAlert(event.data)
                     }
                 }
             }

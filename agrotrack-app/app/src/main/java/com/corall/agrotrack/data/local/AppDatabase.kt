@@ -9,7 +9,7 @@ import com.corall.agrotrack.data.local.entity.SensorReadingEntity
 
 @Database(
     entities  = [SensorReadingEntity::class, AlertEntity::class],
-    version   = 1,
+    version   = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

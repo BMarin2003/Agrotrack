@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
@@ -23,6 +24,7 @@ import com.corall.agrotrack.presentation.dashboard.components.SensorCard
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    onBack:               () -> Unit,
     onNavigateToAlerts:   () -> Unit,
     onNavigateToReports:  () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -35,7 +37,12 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AgroTrack") },
+                title = { Text("Monitoreo") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
                 actions = {
                     // Ícono de alertas — visible para todos
                     BadgedBox(

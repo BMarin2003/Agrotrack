@@ -81,6 +81,7 @@ fun AppNavGraph(
         // ── Monitoreo ─────────────────────────────────────────────────────────
         composable(Screen.Dashboard.route) {
             DashboardScreen(
+                onBack                = { navController.popBackStack() },
                 onNavigateToAlerts    = { navController.navigate(Screen.Alerts.route) },
                 onNavigateToReports   = { navController.navigate(Screen.Reports.route) },
                 onNavigateToSettings  = {
