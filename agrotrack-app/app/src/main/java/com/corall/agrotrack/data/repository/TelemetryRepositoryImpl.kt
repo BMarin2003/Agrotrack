@@ -55,7 +55,10 @@ class TelemetryRepositoryImpl @Inject constructor(
 
     override fun getCachedReadings(gatewayId: Int): Flow<List<SensorReading>> {
         return readingDao.observeLatestByGateway(gatewayId).map { readings ->
-            readings.map { it.toDomain() }
+            readings
+                .sortedByDescending { it.receivedAt }
+                .distinctBy { it.sensorId }
+                .map { it.toDomain() }
         }
     }
 

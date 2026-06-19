@@ -17,14 +17,14 @@ interface SensorReadingDao {
     suspend fun insertAll(readings: List<SensorReadingEntity>)
 
     @Query("""
-        SELECT * FROM sensor_readings
-        WHERE gatewayId = :gatewayId
-          AND receivedAt = (
-              SELECT MAX(s2.receivedAt) FROM sensor_readings s2
-              WHERE s2.sensorId = sensor_readings.sensorId
-                AND s2.gatewayId = :gatewayId
-          )
-        ORDER BY receivedAt DESC
+        SELECT sr.* FROM sensor_readings sr
+        INNER JOIN (
+            SELECT sensorId, MAX(rowid) AS maxRowId
+            FROM sensor_readings
+            WHERE gatewayId = :gatewayId
+            GROUP BY sensorId
+        ) latest ON sr.rowid = latest.maxRowId
+        ORDER BY sr.receivedAt DESC
     """)
     fun observeLatestByGateway(gatewayId: Int): Flow<List<SensorReadingEntity>>
 

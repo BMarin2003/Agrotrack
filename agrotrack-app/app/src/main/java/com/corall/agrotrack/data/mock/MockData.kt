@@ -62,7 +62,7 @@ object MockData {
     }
 
     private val thresholdStore: MutableMap<Int, ThresholdConfig> = mutableMapOf(
-        1 to ThresholdConfig(sensorId = 1, minThreshold = 20.5, maxThreshold = 25.0, alertsEnabled = true),
+        1 to ThresholdConfig(sensorId = 1, minThreshold = 17.0, maxThreshold = 28.0, alertsEnabled = true),
     )
 
     fun getThresholdConfig(sensorId: Int): ThresholdConfig =
