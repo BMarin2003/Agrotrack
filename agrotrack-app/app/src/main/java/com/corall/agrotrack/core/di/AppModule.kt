@@ -3,6 +3,7 @@ package com.corall.agrotrack.core.di
 import com.corall.agrotrack.data.remote.api.AuthApiService
 import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.data.remote.api.TelemetryApiService
+import com.corall.agrotrack.data.remote.api.UsersApiService
 import com.corall.agrotrack.data.repository.AuthRepositoryImpl
 import com.corall.agrotrack.data.repository.GatewayRepositoryImpl
 import com.corall.agrotrack.data.repository.TelemetryRepositoryImpl
@@ -57,5 +58,11 @@ abstract class AppModule {
         fun provideSensorsApi(
             retrofit: Retrofit,
         ): SensorsApiService = retrofit.create(SensorsApiService::class.java)
+
+        @Provides
+        @Singleton
+        fun provideUsersApi(
+            retrofit: Retrofit,
+        ): UsersApiService = retrofit.create(UsersApiService::class.java)
     }
 }

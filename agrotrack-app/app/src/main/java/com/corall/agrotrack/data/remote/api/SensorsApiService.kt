@@ -20,6 +20,9 @@ interface SensorsApiService {
         @Query("gateway_id") gatewayId: Int,
     ): Response<List<SensorDto>>
 
+    @GET("sensors")
+    suspend fun getAllSensors(): Response<List<SensorDto>>
+
     @GET("sensors/{id}")
     suspend fun getSensorById(
         @Path("id") id: Int,

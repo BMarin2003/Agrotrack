@@ -133,6 +133,12 @@ class TelemetryRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun getReportHistory(sensorId: Int, from: String?, to: String?): Result<List<SensorReading>> = runCatching {
+        val response = api.getReportHistory(sensorId, from, to)
+        if (!response.isSuccessful) error("No se pudo cargar el historial")
+        response.body().orEmpty().map { it.toDomain() }
+    }
+
     override suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit> = runCatching {
         if (MockConfig.ENABLED) {
             MockData.saveThresholdConfig(config)

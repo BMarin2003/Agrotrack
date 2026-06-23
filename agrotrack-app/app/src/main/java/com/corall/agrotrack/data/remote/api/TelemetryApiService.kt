@@ -48,4 +48,12 @@ interface TelemetryApiService {
     suspend fun upsertThreshold(
         @Body body: ThresholdUpsertDto,
     ): Response<ThresholdItemDto>
+
+    @GET("reports/sensor/{sensorId}")
+    suspend fun getReportHistory(
+        @Path("sensorId")  sensorId: Int,
+        @Query("from")     from:     String? = null,
+        @Query("to")       to:       String? = null,
+        @Query("limit")    limit:    Int?    = null,
+    ): Response<List<SensorReadingDto>>
 }
