@@ -1,15 +1,19 @@
+﻿-- ============================================================
+-- AgroTrack — Migration 001: Schema inicial
+-- Tablas, procedimientos, seeds de roles/permisos y grants
+-- ============================================================
 
--- ─── EXTENSIONES ──────────────────────────────────────────────────────────────
+-- â”€â”€â”€ EXTENSIONES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- requerida por iot.save_gateway
 
 
--- ─── SCHEMAS ──────────────────────────────────────────────────────────────────
+-- â”€â”€â”€ SCHEMAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE SCHEMA IF NOT EXISTS core;
 CREATE SCHEMA IF NOT EXISTS iot;
 
 
--- ─── ENUMs ────────────────────────────────────────────────────────────────────
+-- â”€â”€â”€ ENUMs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DO $$ BEGIN
   CREATE TYPE iot.enum_sensor_type AS ENUM ('temperature','humidity','voltage','pressure','co2','other');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -77,7 +81,7 @@ CREATE TABLE IF NOT EXISTS iot.sensors (
     name        VARCHAR(200) NOT NULL,
     identifier  VARCHAR(100) NOT NULL,
     type        iot.enum_sensor_type NOT NULL DEFAULT 'temperature',
-    unit        VARCHAR(20) DEFAULT '°C',
+    unit        VARCHAR(20) DEFAULT 'Â°C',
     location    VARCHAR(300),
     enable      BOOLEAN DEFAULT TRUE,
     date_cr     BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
@@ -125,7 +129,7 @@ CREATE TABLE IF NOT EXISTS iot.alerts (
 );
 
 
--- ─── ÍNDICES ──────────────────────────────────────────────────────────────────
+-- â”€â”€â”€ ÃNDICES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE INDEX IF NOT EXISTS idx_readings_sensor_time  ON iot.sensor_readings (sensor_id, received_at DESC);
 CREATE INDEX IF NOT EXISTS idx_readings_gateway_time ON iot.sensor_readings (gateway_id, received_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alerts_active         ON iot.alerts (resolved, created_at DESC);
@@ -335,7 +339,7 @@ BEGIN
         VALUES (
             (p_data->>'gateway_id')::INTEGER, p_data->>'name', p_data->>'identifier',
             COALESCE(p_data->>'type', 'temperature')::iot.enum_sensor_type,
-            COALESCE(p_data->>'unit', '°C'), p_data->>'location'
+            COALESCE(p_data->>'unit', 'Â°C'), p_data->>'location'
         ) RETURNING id INTO v_id;
     END IF;
     RETURN JSON_BUILD_OBJECT('id', v_id);
@@ -529,15 +533,15 @@ $$ LANGUAGE plpgsql;
 
 INSERT INTO core.roles (name, description) VALUES
     ('Administrador', 'Acceso total al sistema'),
-    ('Operador',      'Monitoreo de sensores y gestión de umbrales'),
-    ('Técnico',       'Gestión técnica de gateways, sensores y calibración'),
+    ('Operador',      'Monitoreo de sensores y gestiÃ³n de umbrales'),
+    ('TÃ©cnico',       'GestiÃ³n tÃ©cnica de gateways, sensores y calibraciÃ³n'),
     ('Auditor',       'Solo lectura de reportes y alertas')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO core.permissions (name, slug) VALUES
     ('Ver sensores',        'iot.view_sensors'),
     ('Gestionar sensores',  'iot.manage_sensors'),
-    ('Ver telemetría',      'iot.view_telemetry'),
+    ('Ver telemetrÃ­a',      'iot.view_telemetry'),
     ('Ver alertas',         'iot.view_alerts'),
     ('Resolver alertas',    'iot.resolve_alerts'),
     ('Gestionar umbrales',  'iot.manage_thresholds'),
@@ -556,10 +560,10 @@ WHERE r.name = 'Operador' AND p.slug IN (
 )
 ON CONFLICT DO NOTHING;
 
--- Técnico: todo iot (gestión completa de gateways y sensores)
+-- TÃ©cnico: todo iot (gestiÃ³n completa de gateways y sensores)
 INSERT INTO core.role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM core.roles r, core.permissions p
-WHERE r.name = 'Técnico' AND p.slug IN (
+WHERE r.name = 'TÃ©cnico' AND p.slug IN (
     'iot.view_sensors', 'iot.manage_sensors', 'iot.view_telemetry',
     'iot.view_alerts', 'iot.resolve_alerts', 'iot.manage_thresholds',
     'iot.view_reports', 'iot.manage_gateways'
@@ -601,3 +605,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT ALL ON FUNCTIONS TO anon, authenti
 ALTER DEFAULT PRIVILEGES IN SCHEMA iot  GRANT ALL ON TABLES    TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA iot  GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA iot  GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+
