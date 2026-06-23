@@ -4,6 +4,7 @@ build/
 .env
 *.log
 .DS_Store
+docs/
 
 *.iml
 .claude
@@ -24,3 +25,5 @@ build/
 local.properties
 graphify-out/
 .codegraph/
+supabase/
+skills-lock.json
