@@ -49,6 +49,67 @@ export const SensorsApi = new Elysia().group(path, (app) =>
     )
 
     .get(
+      "/gateways/:id/maintenance",
+      async ({ params, set }) => {
+        const result = await execProcedure("iot.list_maintenance", [
+          { gateway_id: parseInt(params.id) },
+        ]);
+        if (result.error) { set.status = 500; return { message: result.error }; }
+        return result.result ?? [];
+      },
+      { requirePermission: PERMISSIONS.iot.view_sensors },
+    )
+
+    .post(
+      "/gateways/:id/maintenance",
+      async ({ params, body, set }) => {
+        const result = await execProcedure("iot.register_maintenance", [
+          { gateway_id: parseInt(params.id), ...(body as any) },
+        ]);
+        if (result.error) { set.status = 400; return { message: result.error }; }
+        return result.result;
+      },
+      {
+        requirePermission: PERMISSIONS.iot.manage_gateways,
+        body: t.Object({
+          notes:          t.Optional(t.String()),
+          next_scheduled: t.Optional(t.String()),
+        }),
+      },
+    )
+
+    .get(
+      "/:id/calibration",
+      async ({ params, set }) => {
+        const result = await execProcedure("iot.get_calibration", [
+          { sensor_id: parseInt(params.id) },
+        ]);
+        if (result.error) { set.status = 500; return { message: result.error }; }
+        return result.result;
+      },
+      { requirePermission: PERMISSIONS.iot.view_sensors },
+    )
+
+    .post(
+      "/:id/calibration",
+      async ({ params, body, set }) => {
+        const result = await execProcedure("iot.save_calibration", [
+          { sensor_id: parseInt(params.id), ...(body as any) },
+        ]);
+        if (result.error) { set.status = 400; return { message: result.error }; }
+        return result.result;
+      },
+      {
+        requirePermission: PERMISSIONS.iot.manage_sensors,
+        body: t.Object({
+          gain:      t.Number(),
+          intercept: t.Number(),
+          notes:     t.Optional(t.String()),
+        }),
+      },
+    )
+
+    .get(
       "/:id",
       async ({ params, set }) => {
         const result = await execProcedure("iot.get_sensor", [

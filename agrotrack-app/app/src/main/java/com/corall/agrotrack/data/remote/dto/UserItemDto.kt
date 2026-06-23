@@ -7,7 +7,7 @@ data class UserItemDto(
     @SerializedName("names")     val names:    String,
     @SerializedName("email")     val email:    String,
     @SerializedName("role_id")   val roleId:   Int?,
-    @SerializedName("role_name") val roleName: String?,
+    @SerializedName("role")      val roleName: String?,
     @SerializedName("enable")    val enable:   Boolean?,
 )
 

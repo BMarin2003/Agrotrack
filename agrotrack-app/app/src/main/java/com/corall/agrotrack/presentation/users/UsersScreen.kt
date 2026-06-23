@@ -31,9 +31,10 @@ private val Green  = Color(0xFF22C55E)
 private val Red    = Color(0xFFEF4444)
 
 private val ROLES = listOf(
-    Triple(1, "Operador",      "OPERATOR"),
-    Triple(2, "Técnico",       "TECHNICIAN"),
-    Triple(3, "Administrador", "ADMIN"),
+    Triple(1, "Administrador", "ADMIN"),
+    Triple(2, "Operador",      "OPERATOR"),
+    Triple(3, "Técnico",       "TECHNICIAN"),
+    Triple(4, "Auditor",       "AUDITOR"),
 )
 
 @Composable
