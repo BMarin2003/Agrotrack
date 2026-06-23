@@ -1,9 +1,12 @@
 package com.corall.agrotrack.presentation.installer
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -24,20 +27,20 @@ private val CardBg = Color(0xFF132238)
 private val Green  = Color(0xFF22C55E)
 private val Red    = Color(0xFFEF4444)
 
-// HUs: configurar red WiFi, confirmación de conexión exitosa, error WiFi específico
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstallerScreen(
     onBack:    () -> Unit,
     viewModel: InstallerViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
     var gatewayExpanded by remember { mutableStateOf(false) }
 
     AgroGradient {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
         ) {
             AgroHeader(onBack = onBack)
@@ -49,7 +52,7 @@ fun InstallerScreen(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text     = "Configura la red WiFi del gateway seleccionado.",
+                text     = "Configura la red WiFi y el PIN de acceso del gateway.",
                 color    = Muted,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -67,7 +70,7 @@ fun InstallerScreen(
                 cursorColor          = Cyan,
             )
 
-            // Gateway selector (solo si hay más de uno)
+            // Gateway selector
             if (uiState.gateways.size > 1) {
                 val selectedName = uiState.gateways.firstOrNull { it.id == uiState.selectedGatewayId }?.name ?: "Seleccionar"
                 ExposedDropdownMenuBox(expanded = gatewayExpanded, onExpandedChange = { gatewayExpanded = it }) {
@@ -83,7 +86,7 @@ fun InstallerScreen(
                     ExposedDropdownMenu(
                         expanded         = gatewayExpanded,
                         onDismissRequest = { gatewayExpanded = false },
-                        containerColor   = Color(0xFF132238),
+                        containerColor   = CardBg,
                     ) {
                         uiState.gateways.forEach { gw ->
                             DropdownMenuItem(
@@ -104,7 +107,15 @@ fun InstallerScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            // WiFi config
+            // ── WiFi ─────────────────────────────────────────────────
+            Text("Red WiFi", color = White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                text     = "El gateway se conectará a esta red para enviar datos al servidor.",
+                color    = Muted,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
+            )
+
             OutlinedTextField(
                 value         = uiState.ssid,
                 onValueChange = viewModel::onSsidChange,
@@ -128,39 +139,72 @@ fun InstallerScreen(
                 modifier             = Modifier.fillMaxWidth(),
             )
 
-            uiState.error?.let { err ->
-                Spacer(Modifier.height(8.dp))
-                Text(err, color = Red, fontSize = 12.sp)
-            }
-
-            if (uiState.success) {
-                Spacer(Modifier.height(8.dp))
-                Text("Configuración WiFi guardada correctamente", color = Green, fontSize = 12.sp)
-            }
-
-            Spacer(Modifier.weight(1f))
-
-            // PIN pendiente
-            Surface(color = CardBg, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text("Configuración de PIN", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text("Pendiente en el servidor", color = Muted.copy(alpha = 0.6f), fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
+            uiState.error?.let { Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+            if (uiState.success) Text("WiFi configurado correctamente", color = Green, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
 
             Spacer(Modifier.height(12.dp))
 
             Button(
-                onClick  = viewModel::submit,
+                onClick  = viewModel::submitWifi,
                 enabled  = !uiState.isSaving && uiState.selectedGatewayId != null,
+                modifier = Modifier.fillMaxWidth(),
+                colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
+            ) {
+                if (uiState.isSaving) CircularProgressIndicator(Modifier.size(18.dp), color = Color(0xFF0D1B2A), strokeWidth = 2.dp)
+                else Text("Guardar WiFi", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
+            }
+
+            // ── PIN ──────────────────────────────────────────────────
+            HorizontalDivider(color = Muted.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 20.dp))
+
+            Text("PIN de acceso", color = White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                text     = "PIN de 4 dígitos para acceder a configuración y calibración en el dispositivo.",
+                color    = Muted,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
+            )
+
+            OutlinedTextField(
+                value           = uiState.pin,
+                onValueChange   = { if (it.length <= 4 && it.all { c -> c.isDigit() }) viewModel.onPinChange(it) },
+                label           = { Text("PIN (4 dígitos)") },
+                singleLine      = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors          = fieldColors,
+                modifier        = Modifier.fillMaxWidth(),
+            )
+
+            if (uiState.gateways.size > 1) {
+                Row(
+                    modifier          = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Aplicar a todos los gateways", color = White, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Switch(
+                        checked         = uiState.pinAllGateways,
+                        onCheckedChange = viewModel::onPinAllGatewaysToggle,
+                        colors          = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF0D1B2A),
+                            checkedTrackColor = Cyan,
+                        ),
+                    )
+                }
+            }
+
+            uiState.pinError?.let { Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+            if (uiState.pinSuccess) Text("PIN configurado correctamente", color = Green, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick  = viewModel::submitPin,
+                enabled  = !uiState.isPinSaving && uiState.pin.length == 4,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                 colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
             ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(Modifier.size(18.dp), color = White, strokeWidth = 2.dp)
-                } else {
-                    Text("Guardar configuración WiFi", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
-                }
+                if (uiState.isPinSaving) CircularProgressIndicator(Modifier.size(18.dp), color = Color(0xFF0D1B2A), strokeWidth = 2.dp)
+                else Text("Guardar PIN", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
             }
         }
     }

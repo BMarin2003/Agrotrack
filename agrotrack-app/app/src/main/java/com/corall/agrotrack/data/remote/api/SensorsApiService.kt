@@ -1,6 +1,7 @@
 package com.corall.agrotrack.data.remote.api
 
 import com.corall.agrotrack.data.remote.dto.CalibrationDto
+import com.corall.agrotrack.data.remote.dto.PinConfigDto
 import com.corall.agrotrack.data.remote.dto.CalibrationSaveDto
 import com.corall.agrotrack.data.remote.dto.GatewayDto
 import com.corall.agrotrack.data.remote.dto.MaintenanceRecordDto
@@ -47,6 +48,9 @@ interface SensorsApiService {
         @Path("id") sensorId: Int,
         @Body body: CalibrationSaveDto,
     ): Response<CalibrationDto>
+
+    @PUT("sensors/gateways/pin")
+    suspend fun setGatewayPin(@Body body: PinConfigDto): Response<Unit>
 
     @GET("sensors/gateways/{id}/maintenance")
     suspend fun listMaintenance(@Path("id") gatewayId: Int): Response<List<MaintenanceRecordDto>>

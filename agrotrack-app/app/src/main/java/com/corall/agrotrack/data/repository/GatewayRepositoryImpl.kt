@@ -5,6 +5,7 @@ import com.corall.agrotrack.data.mock.MockData
 import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.data.remote.dto.GatewayDto
 import com.corall.agrotrack.data.remote.dto.SensorDto
+import com.corall.agrotrack.data.remote.dto.PinConfigDto
 import com.corall.agrotrack.data.remote.dto.WifiConfigDto
 import com.corall.agrotrack.domain.model.Gateway
 import com.corall.agrotrack.domain.model.GatewayStatus
@@ -54,6 +55,13 @@ class GatewayRepositoryImpl @Inject constructor(
 
         val response = api.updateGatewayWifi(gatewayId, WifiConfigDto(ssid, password, security))
         if (!response.isSuccessful) error("No se pudo actualizar la configuración WiFi")
+    }
+
+    override suspend fun updateGatewayPin(gatewayIds: List<Int>, pin: String): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching
+
+        val response = api.setGatewayPin(PinConfigDto(gatewayIds, pin))
+        if (!response.isSuccessful) error("No se pudo actualizar el PIN")
     }
 
     private fun GatewayDto.toDomain(): Gateway {

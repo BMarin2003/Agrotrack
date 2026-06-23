@@ -205,6 +205,24 @@ export const SensorsApi = new Elysia().group(path, (app) =>
     )
 
     .put(
+      "/gateways/pin",
+      async ({ body, set }) => {
+        const { gateway_ids, pin } = body as any;
+        const result = await execProcedure("iot.set_gateway_pin", [{ gateway_ids, pin }]);
+        if (result.error) { set.status = 400; return { message: result.error }; }
+        // TODO: publicar pin al topic MQTT de cada gateway cuando se defina el topic
+        return result.result;
+      },
+      {
+        requirePermission: PERMISSIONS.iot.manage_gateways,
+        body: t.Object({
+          gateway_ids: t.Array(t.Number()),
+          pin:         t.String({ pattern: "^\\d{4}$" }),
+        }),
+      },
+    )
+
+    .put(
       "/gateways/:id/wifi",
       async ({ params, body, set }) => {
         const result = await execProcedure("iot.update_gateway_wifi", [

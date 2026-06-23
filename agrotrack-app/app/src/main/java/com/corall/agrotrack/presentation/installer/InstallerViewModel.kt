@@ -26,36 +26,49 @@ class InstallerViewModel @Inject constructor(
             gatewayRepo.getGateways()
                 .onSuccess { gateways ->
                     _uiState.update { it.copy(
-                        isLoading = false,
-                        gateways  = gateways,
+                        isLoading         = false,
+                        gateways          = gateways,
                         selectedGatewayId = gateways.firstOrNull()?.id,
                     ) }
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message) }
-                }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, error = e.message) } }
         }
     }
 
     fun selectGateway(id: Int) = _uiState.update { it.copy(selectedGatewayId = id, success = false, error = null) }
-    fun onSsidChange(v: String) = _uiState.update { it.copy(ssid = v, success = false) }
+    fun onSsidChange(v: String)     = _uiState.update { it.copy(ssid     = v, success  = false, error    = null) }
     fun onPasswordChange(v: String) = _uiState.update { it.copy(password = v) }
 
-    fun submit() {
-        val state = _uiState.value
-        val gatewayId = state.selectedGatewayId ?: run {
-            _uiState.update { it.copy(error = "Selecciona un gateway") }
-            return
-        }
-        if (state.ssid.isBlank()) {
-            _uiState.update { it.copy(error = "El SSID no puede estar vacío") }
-            return
-        }
+    fun submitWifi() {
+        val s = _uiState.value
+        val gatewayId = s.selectedGatewayId ?: run { _uiState.update { it.copy(error = "Selecciona un gateway") }; return }
+        if (s.ssid.isBlank()) { _uiState.update { it.copy(error = "El SSID no puede estar vacío") }; return }
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null, success = false) }
-            gatewayRepo.updateGatewayWifi(gatewayId, state.ssid.trim(), state.password.ifBlank { null }, "WPA2")
+            gatewayRepo.updateGatewayWifi(gatewayId, s.ssid.trim(), s.password.ifBlank { null }, "WPA2")
                 .onSuccess { _uiState.update { it.copy(isSaving = false, success = true) } }
                 .onFailure { e -> _uiState.update { it.copy(isSaving = false, error = e.message) } }
+        }
+    }
+
+    fun onPinChange(v: String)            = _uiState.update { it.copy(pin = v, pinError = null, pinSuccess = false) }
+    fun onPinAllGatewaysToggle(v: Boolean) = _uiState.update { it.copy(pinAllGateways = v, pinError = null) }
+
+    fun submitPin() {
+        val s   = _uiState.value
+        val pin = s.pin.trim()
+        if (pin.length != 4 || !pin.all { it.isDigit() }) {
+            _uiState.update { it.copy(pinError = "El PIN debe ser exactamente 4 dígitos numéricos") }
+            return
+        }
+        val ids = if (s.pinAllGateways) s.gateways.map { it.id }
+                  else listOfNotNull(s.selectedGatewayId)
+        if (ids.isEmpty()) { _uiState.update { it.copy(pinError = "Selecciona un gateway") }; return }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isPinSaving = true, pinError = null, pinSuccess = false) }
+            gatewayRepo.updateGatewayPin(ids, pin)
+                .onSuccess { _uiState.update { it.copy(isPinSaving = false, pinSuccess = true) } }
+                .onFailure { e -> _uiState.update { it.copy(isPinSaving = false, pinError = e.message) } }
         }
     }
 }
