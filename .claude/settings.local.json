@@ -66,7 +66,9 @@
       "Bash(grep -i \"\\\\.kt$\")",
       "Bash(git add *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('plugins',{}\\).items\\(\\)]\")",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"com.corall.agrotrack.presentation.calibration.*\" --tests \"com.corall.agrotrack.presentation.installer.*\" --tests \"com.corall.agrotrack.data.mock.*\")",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew :app:testDebugUnitTest)"
     ]
   },
   "enabledPlugins": {
