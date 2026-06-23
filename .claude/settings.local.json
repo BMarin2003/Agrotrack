@@ -55,7 +55,18 @@
       "Bash(npx mqtt *)",
       "Bash(kill %1)",
       "Bash(git push *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "PowerShell(supabase *)",
+      "PowerShell(winget *)",
+      "PowerShell(npm install *)",
+      "PowerShell($token = Get-Content \"$env:USERPROFILE\\\\.supabase\\\\access-token\" -ErrorAction SilentlyContinue; if \\(-not $token\\) { $token = Get-Content \"$env:APPDATA\\\\supabase\\\\access-token\" -ErrorAction SilentlyContinue }; Write-Output \"Token found: $\\($token -ne $null\\)\")",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(\\(Get-Command supabase\\).Source)",
+      "PowerShell(Start-Sleep -Seconds 4; Invoke-RestMethod -Uri \"http://localhost:3000/api/auth/login\" -Method Post -ContentType \"application/json\" -Body '{\"email\":\"operador@agrotrack.com\",\"password\":\"Operador2024!\"}' | ConvertTo-Json -Depth 5)",
+      "Bash(grep -i \"\\\\.kt$\")",
+      "Bash(git add *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('plugins',{}\\).items\\(\\)]\")",
+      "Bash(git rm *)"
     ]
   },
   "enabledPlugins": {
