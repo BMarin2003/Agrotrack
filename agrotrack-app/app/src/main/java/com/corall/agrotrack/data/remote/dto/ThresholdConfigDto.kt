@@ -9,6 +9,7 @@ data class ThresholdItemDto(
     @SerializedName("min_value")     val minValue:     Double?,
     @SerializedName("max_value")     val maxValue:     Double?,
     @SerializedName("alert_message") val alertMessage: String?,
+    @SerializedName("enable")        val enable:       Boolean = true,
 )
 
 data class ThresholdUpsertDto(
@@ -17,4 +18,5 @@ data class ThresholdUpsertDto(
     @SerializedName("min_value")     val minValue:     Double?,
     @SerializedName("max_value")     val maxValue:     Double?,
     @SerializedName("alert_message") val alertMessage: String? = null,
+    @SerializedName("enable")        val enable:       Boolean,
 )

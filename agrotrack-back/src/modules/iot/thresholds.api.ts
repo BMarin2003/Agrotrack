@@ -33,6 +33,7 @@ export const ThresholdsApi = new Elysia()
         min_value: t.Optional(t.Nullable(t.Number())),
         max_value: t.Optional(t.Nullable(t.Number())),
         alert_message: t.Optional(t.String()),
+        enable: t.Optional(t.Boolean()),
       }),
     })
 

@@ -129,7 +129,7 @@ class TelemetryRepositoryImpl @Inject constructor(
             sensorId      = sensorId,
             minThreshold  = temp.minValue,
             maxThreshold  = temp.maxValue,
-            alertsEnabled = temp.minValue != null || temp.maxValue != null,
+            alertsEnabled = temp.enable,
         )
     }
 
@@ -139,20 +139,13 @@ class TelemetryRepositoryImpl @Inject constructor(
             return@runCatching
         }
 
-        // Validación HU-AL4: si alertsEnabled=false enviamos null en los valores para desactivar
-        // el disparo de alertas, pero el cliente conserva la configuración localmente.
-        val (minVal, maxVal) = if (config.alertsEnabled) {
-            config.minThreshold to config.maxThreshold
-        } else {
-            null to null
-        }
-
         val response = api.upsertThreshold(
             ThresholdUpsertDto(
                 sensorId = config.sensorId,
                 metric   = "temperature",
-                minValue = minVal,
-                maxValue = maxVal,
+                minValue = config.minThreshold,
+                maxValue = config.maxThreshold,
+                enable   = config.alertsEnabled,
             )
         )
         if (!response.isSuccessful) error("No se pudo actualizar la configuración de umbrales")
