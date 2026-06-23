@@ -4,7 +4,7 @@ build/
 .env
 *.log
 .DS_Store
-docs/Informe_Parcial_AgroTrack.docx.md
+docs/
 
 *.iml
 .claude
