@@ -116,6 +116,20 @@ fun SensorDetailScreen(
                         )
                     }
                 }
+
+                uiState.voltage?.let { v ->
+                    val level = batteryWarningLevel(v)
+                    if (level != BatteryWarningLevel.NORMAL) {
+                        Spacer(Modifier.height(8.dp))
+                        val (color, text) = if (level == BatteryWarningLevel.CRITICAL)
+                            Color(0xFFEF4444) to "Batería crítica — reemplazar de inmediato"
+                        else
+                            Color(0xFFF59E0B) to "Voltaje bajo — reemplazar batería pronto"
+
+                        Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+
                 Spacer(Modifier.height(24.dp))
             }
 
@@ -150,6 +164,17 @@ fun SensorDetailScreen(
             }
         }
     }
+}
+
+private const val LOW_VOLTAGE_THRESHOLD      = 3.5
+private const val CRITICAL_VOLTAGE_THRESHOLD = 3.3
+
+private enum class BatteryWarningLevel { NORMAL, LOW, CRITICAL }
+
+private fun batteryWarningLevel(voltage: Double): BatteryWarningLevel = when {
+    voltage < CRITICAL_VOLTAGE_THRESHOLD -> BatteryWarningLevel.CRITICAL
+    voltage < LOW_VOLTAGE_THRESHOLD      -> BatteryWarningLevel.LOW
+    else                                 -> BatteryWarningLevel.NORMAL
 }
 
 @Composable
