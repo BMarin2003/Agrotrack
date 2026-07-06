@@ -47,7 +47,7 @@ export const TelemetryApi = new Elysia()
         }]);
       }
 
-      watchdogService.heartbeat(payload.sensor_id);
+      watchdogService.heartbeat(payload.sensor_id, gateway.id);
       await rulesEngine.evaluate(reading);
       broadcastToGateway(gateway.id, { type: 'reading', data: reading });
 
