@@ -22,17 +22,43 @@ class WatchdogService {
     if (this.timer) clearInterval(this.timer);
   }
 
-  heartbeat(sensorId: number, gatewayId?: number) {
+  async heartbeat(sensorId: number, gatewayId?: number) {
     const existing = heartbeats.get(sensorId);
+    const resolvedGatewayId = gatewayId ?? existing?.gateway_id ?? 0;
+
     heartbeats.set(sensorId, {
-      gateway_id: gatewayId ?? existing?.gateway_id ?? 0,
+      gateway_id: resolvedGatewayId,
       last_seen: Date.now(),
     });
 
-    // Si el sensor vuelve a transmitir, sacarlo de offline
+    // Si el sensor vuelve a transmitir, sacarlo de offline y avisar
     if (offlineSensors.has(sensorId)) {
       offlineSensors.delete(sensorId);
       console.log(`[Watchdog] Sensor ${sensorId} volvió a transmitir`);
+
+      const message = `Sensor ${sensorId} volvió a transmitir`;
+      const result = await execProcedure('iot.save_alert', [{
+        sensor_id: sensorId,
+        gateway_id: resolvedGatewayId,
+        user_id: null,
+        type: 'sensor_recovered',
+        message,
+      }]);
+
+      if (result.error) {
+        console.error('[Watchdog] Error al guardar alerta de recuperación:', result.error);
+      } else {
+        broadcastToAll({
+          type: 'alert',
+          data: {
+            id: result.result?.id,
+            sensor_id: sensorId,
+            gateway_id: resolvedGatewayId,
+            type: 'sensor_recovered',
+            message,
+          },
+        });
+      }
     }
   }
 
