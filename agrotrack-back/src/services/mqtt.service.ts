@@ -1,5 +1,5 @@
 import mqtt from 'mqtt';
-import { configServer } from 'src/config';
+import { configServer } from '../config';
 import { execProcedure } from '@core/db/connection';
 import { rulesEngine } from '@services/rules.engine';
 import { watchdogService } from '@services/watchdog.service';

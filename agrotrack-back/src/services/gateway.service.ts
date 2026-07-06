@@ -1,4 +1,4 @@
-import { configServer } from 'src/config';
+import { configServer } from '../config';
 import { watchdogService } from '@services/watchdog.service';
 import { broadcastToGateway } from '@modules/iot/telemetry.ws';
 

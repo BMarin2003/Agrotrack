@@ -1,7 +1,7 @@
 import { mqttService } from "@services/mqtt.service";
 import { watchdogService } from "@services/watchdog.service";
 import { gatewayMockService } from "@services/gateway.service";
-import { configServer } from "src/config";
+import { configServer } from "./config";
 
 export const bootServer = async () => {
   if (configServer.mqtt.enabled) {

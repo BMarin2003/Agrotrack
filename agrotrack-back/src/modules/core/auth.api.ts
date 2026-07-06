@@ -4,7 +4,7 @@ import { extractToken, generateToken, validateToken } from '@core/jwt';
 import { userStore } from '@core/store';
 import { authPlugin } from '@core/auth.guard';
 import { loginRateLimiter } from '@core/rate-limiter';
-import { configServer } from 'src/config';
+import { configServer } from '../../config';
 
 const { verifySync } = Bun.password;
 const path = '/auth';

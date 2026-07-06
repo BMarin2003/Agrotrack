@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { configServer } from 'src/config';
+import { configServer } from '../config';
 import { PermisoSlug } from './permisos.type';
 
 class UserStore {
