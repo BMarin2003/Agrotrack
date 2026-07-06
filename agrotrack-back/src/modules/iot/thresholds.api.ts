@@ -9,8 +9,12 @@ export const ThresholdsApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ query, set }) => {
-      const result = await execProcedure('iot.list_thresholds', [{ sensor_id: query.sensor_id || null }]);
+    .get('/', async ({ query, user, set }) => {
+      const userId = (user as any).isAdmin ? null : (user as any).id;
+      const result = await execProcedure('iot.list_thresholds', [{
+        sensor_id: query.sensor_id || null,
+        user_id: userId,
+      }]);
       if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, {

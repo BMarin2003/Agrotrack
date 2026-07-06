@@ -43,11 +43,13 @@ export const ReportsApi = new Elysia()
       }),
     })
 
-    .get('/alerts/:gateway_id', async ({ params, query, set }) => {
+    .get('/alerts/:gateway_id', async ({ params, query, user, set }) => {
+      const userId = (user as any).isAdmin ? null : (user as any).id;
       const result = await execProcedure('iot.get_alert_history', [{
         gateway_id: parseInt(params.gateway_id),
         from_ts: query.from || null,
         to_ts: query.to || null,
+        user_id: userId,
       }]);
       if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;

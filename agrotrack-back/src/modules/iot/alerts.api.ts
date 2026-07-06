@@ -10,10 +10,12 @@ export const AlertsApi = new Elysia()
   .group(path, app => app
     .use(authPlugin)
 
-    .get('/', async ({ query, set }) => {
+    .get('/', async ({ query, user, set }) => {
+      const userId = (user as any).isAdmin ? null : (user as any).id;
       const result = await execProcedure('iot.get_active_alerts', [{
         gateway_id: query.gateway_id || null,
         resolved: query.resolved === 'true',
+        user_id: userId,
       }]);
       if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
