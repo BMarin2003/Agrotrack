@@ -9,6 +9,7 @@ import com.corall.agrotrack.data.remote.dto.SensorDto
 import com.corall.agrotrack.data.remote.dto.PinConfigDto
 import com.corall.agrotrack.data.remote.dto.WifiConfigDto
 import com.corall.agrotrack.domain.model.Gateway
+import com.corall.agrotrack.domain.model.GatewayConnectivityMode
 import com.corall.agrotrack.domain.model.GatewayStatus
 import com.corall.agrotrack.domain.model.Sensor
 import com.corall.agrotrack.domain.repository.GatewayRepository
@@ -93,6 +94,7 @@ class GatewayRepositoryImpl @Inject constructor(
             status = GatewayStatus.from(status, enabled),
             lastReadingAt = lastReadingAt.toEpochMillisOrNull(),
             battery = battery,
+            connectivityMode = GatewayConnectivityMode.from(connectivityMode),
         )
     }
 

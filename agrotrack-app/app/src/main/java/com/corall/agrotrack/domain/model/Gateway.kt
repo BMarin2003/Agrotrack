@@ -10,4 +10,5 @@ data class Gateway(
     val status: GatewayStatus,
     val lastReadingAt: Long?,
     val battery: Double? = null,
+    val connectivityMode: GatewayConnectivityMode = GatewayConnectivityMode.Unknown,
 )
