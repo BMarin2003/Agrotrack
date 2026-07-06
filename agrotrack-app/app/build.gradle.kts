@@ -29,8 +29,9 @@ android {
         debug {
             isDebuggable   = true
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.15.13:3000/api/\"")
-            buildConfigField("String", "WS_BASE_URL",  "\"ws://192.168.15.13:3000/ws/\"")
+            // Sin override de API_BASE_URL/WS_BASE_URL: hereda 10.0.2.2 de defaultConfig,
+            // correcto para el emulador de Android Studio. Si se prueba en un dispositivo
+            // físico por WiFi, agregar aquí la IP LAN actual de la máquina.
         }
         release {
             isMinifyEnabled = true
