@@ -117,11 +117,12 @@ class MqttService {
 
       const gateway = gatewayResult.result;
 
-      if (payload.ConnMode || typeof payload.PendingSync === 'number') {
+      if (payload.ConnMode || typeof payload.PendingSync === 'number' || typeof payload.Bg === 'number') {
         await execProcedure('iot.update_gateway_status', [{
           gateway_id: gateway.id,
           connectivity_mode: payload.ConnMode,
           pending_sync_count: payload.PendingSync,
+          battery: payload.Bg,
         }]);
       }
 
