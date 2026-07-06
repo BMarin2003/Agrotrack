@@ -16,9 +16,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val DEFAULT_GATEWAY_ID = 1
+
+enum class AlertsTab { ACTIVE, HISTORY }
+
 data class AlertsUiState(
-    val alerts:     List<Alert> = emptyList(),
-    val canResolve: Boolean     = false,
+    val alerts:          List<Alert> = emptyList(),
+    val historyAlerts:   List<Alert> = emptyList(),
+    val isLoadingHistory: Boolean    = false,
+    val historyError:    String?     = null,
+    val selectedTab:     AlertsTab   = AlertsTab.ACTIVE,
+    val canResolve:      Boolean     = false,
 )
 
 @HiltViewModel
@@ -44,5 +52,21 @@ class AlertsViewModel @Inject constructor(
 
     fun clearAll() {
         viewModelScope.launch { repository.clearAllAlerts() }
+    }
+
+    fun selectTab(tab: AlertsTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+        if (tab == AlertsTab.HISTORY && _uiState.value.historyAlerts.isEmpty()) {
+            loadHistory()
+        }
+    }
+
+    private fun loadHistory() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingHistory = true, historyError = null) }
+            repository.getAlertHistory(DEFAULT_GATEWAY_ID)
+                .onSuccess { alerts -> _uiState.update { it.copy(isLoadingHistory = false, historyAlerts = alerts) } }
+                .onFailure { e -> _uiState.update { it.copy(isLoadingHistory = false, historyError = e.message) } }
+        }
     }
 }
