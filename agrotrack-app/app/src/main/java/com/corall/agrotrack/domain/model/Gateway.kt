@@ -11,4 +11,5 @@ data class Gateway(
     val lastReadingAt: Long?,
     val battery: Double? = null,
     val connectivityMode: GatewayConnectivityMode = GatewayConnectivityMode.Unknown,
+    val pendingSyncCount: Int = 0,
 )

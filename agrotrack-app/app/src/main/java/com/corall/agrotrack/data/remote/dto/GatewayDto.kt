@@ -13,4 +13,5 @@ data class GatewayDto(
     @SerializedName("last_reading_at") val lastReadingAt: String?,
     @SerializedName("battery") val battery: Double? = null,
     @SerializedName("connectivity_mode") val connectivityMode: String? = null,
+    @SerializedName("pending_sync_count") val pendingSyncCount: Int? = null,
 )

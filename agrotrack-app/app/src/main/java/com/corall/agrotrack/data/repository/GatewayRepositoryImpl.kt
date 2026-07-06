@@ -95,6 +95,7 @@ class GatewayRepositoryImpl @Inject constructor(
             lastReadingAt = lastReadingAt.toEpochMillisOrNull(),
             battery = battery,
             connectivityMode = GatewayConnectivityMode.from(connectivityMode),
+            pendingSyncCount = pendingSyncCount ?: 0,
         )
     }
 
