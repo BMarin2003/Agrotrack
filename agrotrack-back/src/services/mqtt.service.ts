@@ -15,6 +15,8 @@ interface TwarmPayload {
   SNR: number;
   Bs: number;
   Bg: number;
+  ConnMode?: string;
+  PendingSync?: number;
 }
 
 class MqttService {
@@ -114,6 +116,14 @@ class MqttService {
       }
 
       const gateway = gatewayResult.result;
+
+      if (payload.ConnMode || typeof payload.PendingSync === 'number') {
+        await execProcedure('iot.update_gateway_status', [{
+          gateway_id: gateway.id,
+          connectivity_mode: payload.ConnMode,
+          pending_sync_count: payload.PendingSync,
+        }]);
+      }
 
       const sensorId = await this.resolveSensorId(gateway.id, payload.Slave);
       if (sensorId === null) return;
