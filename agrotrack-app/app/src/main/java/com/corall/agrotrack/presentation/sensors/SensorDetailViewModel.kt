@@ -62,4 +62,35 @@ class SensorDetailViewModel @Inject constructor(
             ) }
         }
     }
+
+    fun openAliasDialog() {
+        _uiState.update { it.copy(aliasDialogOpen = true, aliasInput = it.sensorName, aliasError = null) }
+    }
+
+    fun closeAliasDialog() {
+        _uiState.update { it.copy(aliasDialogOpen = false, aliasError = null) }
+    }
+
+    fun onAliasInputChange(value: String) {
+        _uiState.update { it.copy(aliasInput = value, aliasError = null) }
+    }
+
+    fun saveAlias() {
+        val alias = _uiState.value.aliasInput.trim()
+        if (alias.isBlank()) {
+            _uiState.update { it.copy(aliasError = "El alias no puede estar vacío") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(aliasSaving = true, aliasError = null) }
+            gatewayRepo.saveSensorAlias(sensorId, alias)
+                .onSuccess {
+                    _uiState.update { it.copy(aliasSaving = false, aliasDialogOpen = false, sensorName = alias) }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(aliasSaving = false, aliasError = e.message) }
+                }
+        }
+    }
 }

@@ -4,6 +4,7 @@ import com.corall.agrotrack.data.mock.MockConfig
 import com.corall.agrotrack.data.mock.MockData
 import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.data.remote.dto.GatewayDto
+import com.corall.agrotrack.data.remote.dto.SensorAliasSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorDto
 import com.corall.agrotrack.data.remote.dto.PinConfigDto
 import com.corall.agrotrack.data.remote.dto.WifiConfigDto
@@ -62,6 +63,21 @@ class GatewayRepositoryImpl @Inject constructor(
 
         val response = api.setGatewayPin(PinConfigDto(gatewayIds, pin))
         if (!response.isSuccessful) error("No se pudo actualizar el PIN")
+    }
+
+    override suspend fun getSensorAlias(sensorId: Int): Result<String?> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching null
+
+        val response = api.getSensorAlias(sensorId)
+        if (!response.isSuccessful) error("No se pudo obtener el alias del sensor")
+        response.body()?.alias
+    }
+
+    override suspend fun saveSensorAlias(sensorId: Int, alias: String): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching
+
+        val response = api.saveSensorAlias(sensorId, SensorAliasSaveDto(alias))
+        if (!response.isSuccessful) error("No se pudo guardar el alias del sensor")
     }
 
     private fun GatewayDto.toDomain(): Gateway {

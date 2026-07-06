@@ -6,6 +6,8 @@ import com.corall.agrotrack.data.remote.dto.CalibrationSaveDto
 import com.corall.agrotrack.data.remote.dto.GatewayDto
 import com.corall.agrotrack.data.remote.dto.MaintenanceRecordDto
 import com.corall.agrotrack.data.remote.dto.MaintenanceSaveDto
+import com.corall.agrotrack.data.remote.dto.SensorAliasDto
+import com.corall.agrotrack.data.remote.dto.SensorAliasSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorDto
 import com.corall.agrotrack.data.remote.dto.WifiConfigDto
 import retrofit2.Response
@@ -60,4 +62,13 @@ interface SensorsApiService {
         @Path("id") gatewayId: Int,
         @Body body: MaintenanceSaveDto,
     ): Response<MaintenanceRecordDto>
+
+    @GET("sensors/{id}/alias")
+    suspend fun getSensorAlias(@Path("id") sensorId: Int): Response<SensorAliasDto>
+
+    @PUT("sensors/{id}/alias")
+    suspend fun saveSensorAlias(
+        @Path("id") sensorId: Int,
+        @Body body: SensorAliasSaveDto,
+    ): Response<SensorAliasDto>
 }

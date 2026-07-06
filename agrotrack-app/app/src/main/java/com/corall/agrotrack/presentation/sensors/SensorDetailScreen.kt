@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Tune
@@ -64,19 +65,26 @@ fun SensorDetailScreen(
             Spacer(Modifier.height(8.dp))
 
             // Nombre y ubicación
-            Text(
-                text       = uiState.sensorName,
-                color      = White,
-                fontSize   = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            if (uiState.location.isNotBlank()) {
-                Text(
-                    text     = uiState.location,
-                    color    = Muted,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text       = uiState.sensorName,
+                        color      = White,
+                        fontSize   = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (uiState.location.isNotBlank()) {
+                        Text(
+                            text     = uiState.location,
+                            color    = Muted,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+                IconButton(onClick = { viewModel.openAliasDialog() }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar alias", tint = SoftCyan)
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -163,6 +171,35 @@ fun SensorDetailScreen(
                 }
             }
         }
+    }
+
+    if (uiState.aliasDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { viewModel.closeAliasDialog() },
+            title = { Text("Editar alias del sensor") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value         = uiState.aliasInput,
+                        onValueChange = viewModel::onAliasInputChange,
+                        singleLine    = true,
+                        label         = { Text("Nombre personalizado") },
+                    )
+                    uiState.aliasError?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(it, color = Color(0xFFEF4444), fontSize = 12.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::saveAlias, enabled = !uiState.aliasSaving) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.closeAliasDialog() }) { Text("Cancelar") }
+            },
+        )
     }
 }
 

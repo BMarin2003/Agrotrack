@@ -14,4 +14,8 @@ data class SensorDetailUiState(
     val receivedAt:  Long?        = null,
     val status:      SensorStatus = SensorStatus.Offline,
     val error:       String?      = null,
+    val aliasDialogOpen: Boolean  = false,
+    val aliasInput:      String   = "",
+    val aliasSaving:     Boolean  = false,
+    val aliasError:      String?  = null,
 )

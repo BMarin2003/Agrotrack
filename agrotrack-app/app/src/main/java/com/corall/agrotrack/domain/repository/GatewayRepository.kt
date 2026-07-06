@@ -10,4 +10,6 @@ interface GatewayRepository {
     suspend fun getSensorById(sensorId: Int): Result<Sensor>
     suspend fun updateGatewayWifi(gatewayId: Int, ssid: String, password: String?, security: String): Result<Unit>
     suspend fun updateGatewayPin(gatewayIds: List<Int>, pin: String): Result<Unit>
+    suspend fun getSensorAlias(sensorId: Int): Result<String?>
+    suspend fun saveSensorAlias(sensorId: Int, alias: String): Result<Unit>
 }
