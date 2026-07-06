@@ -191,6 +191,7 @@ fun GatewayCard(
                 ) {
                     GatewayStatusPill(status = gateway.status)
                     ConnectivityIcon(mode = gateway.connectivityMode, modifier = Modifier.padding(start = 6.dp))
+                    SyncingPill(pendingCount = gateway.pendingSyncCount, modifier = Modifier.padding(start = 6.dp))
                 }
             }
 
@@ -397,6 +398,33 @@ private fun ConnectivityIcon(
         tint = Muted,
         modifier = modifier.size(12.dp),
     )
+}
+
+@Composable
+private fun SyncingPill(
+    pendingCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    if (pendingCount <= 0) return
+
+    Row(
+        modifier = modifier
+            .background(Blue.copy(alpha = 0.14f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 7.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(8.dp),
+            color = Blue,
+            strokeWidth = 1.dp,
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = "Sincronizando ($pendingCount)",
+            color = Blue,
+            fontSize = 10.sp,
+        )
+    }
 }
 
 private fun sensorIcon(type: String): ImageVector {
