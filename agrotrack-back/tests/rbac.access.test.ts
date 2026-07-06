@@ -10,6 +10,7 @@ const ROLE_PERMISSIONS: Record<string, Set<string>> = {
   Técnico: new Set([
     PERMISSIONS.iot.view_sensors,
     PERMISSIONS.iot.manage_sensors,
+    PERMISSIONS.iot.rename_sensor_alias,
     PERMISSIONS.iot.view_telemetry,
     PERMISSIONS.iot.view_alerts,
     PERMISSIONS.iot.resolve_alerts,
@@ -20,6 +21,7 @@ const ROLE_PERMISSIONS: Record<string, Set<string>> = {
 
   Operador: new Set([
     PERMISSIONS.iot.view_sensors,
+    PERMISSIONS.iot.rename_sensor_alias,
     PERMISSIONS.iot.view_telemetry,
     PERMISSIONS.iot.view_alerts,
     PERMISSIONS.iot.view_reports,
@@ -79,6 +81,10 @@ describe("Operador — zona de trabajo", () => {
     expect(rbac.hasPermission(uid, PERMISSIONS.iot.view_reports)).toBe(true);
   });
 
+  it("puede renombrar el alias de un sensor", () => {
+    expect(rbac.hasPermission(uid, PERMISSIONS.iot.rename_sensor_alias)).toBe(true);
+  });
+
   // ── Accesos denegados ─────────────────────────────────────────────────────
   it("NO puede gestionar sensores", () => {
     expect(rbac.hasPermission(uid, PERMISSIONS.iot.manage_sensors)).toBe(false);
@@ -112,9 +118,9 @@ describe("Operador — zona de trabajo", () => {
     expect(rbac.isAdmin(uid)).toBe(false);
   });
 
-  it("tiene exactamente 4 permisos asignados", () => {
+  it("tiene exactamente 5 permisos asignados", () => {
     const perms = ROLE_PERMISSIONS["Operador"];
-    expect(perms.size).toBe(4);
+    expect(perms.size).toBe(5);
   });
 });
 
@@ -134,6 +140,10 @@ describe("Técnico — zona de trabajo", () => {
 
   it("puede gestionar sensores", () => {
     expect(rbac.hasPermission(uid, PERMISSIONS.iot.manage_sensors)).toBe(true);
+  });
+
+  it("puede renombrar el alias de un sensor", () => {
+    expect(rbac.hasPermission(uid, PERMISSIONS.iot.rename_sensor_alias)).toBe(true);
   });
 
   it("puede ver telemetría", () => {
@@ -175,9 +185,9 @@ describe("Técnico — zona de trabajo", () => {
     expect(rbac.isAdmin(uid)).toBe(false);
   });
 
-  it("tiene exactamente 8 permisos asignados (todos los IoT)", () => {
+  it("tiene exactamente 9 permisos asignados (todos los IoT)", () => {
     const perms = ROLE_PERMISSIONS["Técnico"];
-    expect(perms.size).toBe(8);
+    expect(perms.size).toBe(9);
   });
 
   it("sus permisos son un superconjunto de los del Operador", () => {
@@ -205,6 +215,10 @@ describe("Administrador — zona de trabajo", () => {
 
   it("puede gestionar sensores", () => {
     expect(rbac.hasPermission(uid, PERMISSIONS.iot.manage_sensors)).toBe(true);
+  });
+
+  it("puede renombrar el alias de un sensor", () => {
+    expect(rbac.hasPermission(uid, PERMISSIONS.iot.rename_sensor_alias)).toBe(true);
   });
 
   it("puede ver telemetría", () => {
@@ -246,7 +260,7 @@ describe("Administrador — zona de trabajo", () => {
     expect(rbac.isAdmin(uid)).toBe(true);
   });
 
-  it("tiene los 10 permisos del sistema", () => {
+  it("tiene los 11 permisos del sistema", () => {
     const perms = ROLE_PERMISSIONS["Administrador"];
     const total =
       Object.values(PERMISSIONS.iot).length +
@@ -439,10 +453,10 @@ describe("Jerarquía de roles — invariantes del sistema", () => {
     }
   });
 
-  it("el catálogo total tiene exactamente 10 permisos", () => {
+  it("el catálogo total tiene exactamente 11 permisos", () => {
     const total =
       Object.values(PERMISSIONS.iot).length +
       Object.values(PERMISSIONS.admin).length;
-    expect(total).toBe(10);
+    expect(total).toBe(11);
   });
 });

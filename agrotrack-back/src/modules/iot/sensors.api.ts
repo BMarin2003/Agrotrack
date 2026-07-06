@@ -28,9 +28,9 @@ export const SensorsApi = new Elysia().group(path, (app) =>
 
     .get(
       "/",
-      async ({ query, set }) => {
+      async ({ query, user, set }) => {
         const result = await execProcedure("iot.list_sensors", [
-          { gateway_id: query.gateway_id || null },
+          { gateway_id: query.gateway_id || null, user_id: (user as any).id },
         ]);
 
         if (result.error) {
@@ -111,9 +111,9 @@ export const SensorsApi = new Elysia().group(path, (app) =>
 
     .get(
       "/:id",
-      async ({ params, set }) => {
+      async ({ params, user, set }) => {
         const result = await execProcedure("iot.get_sensor", [
-          { id: parseInt(params.id) },
+          { id: parseInt(params.id), user_id: (user as any).id },
         ]);
 
         if (result.error) {
@@ -179,6 +179,33 @@ export const SensorsApi = new Elysia().group(path, (app) =>
           location: t.Optional(t.String()),
           enable: t.Optional(t.Boolean()),
         }),
+      },
+    )
+
+    .get(
+      "/:id/alias",
+      async ({ params, user, set }) => {
+        const result = await execProcedure("iot.get_sensor_alias", [
+          { sensor_id: parseInt(params.id), user_id: (user as any).id },
+        ]);
+        if (result.error) { set.status = 500; return { message: result.error }; }
+        return result.result ?? { alias: null };
+      },
+      { requirePermission: PERMISSIONS.iot.view_sensors },
+    )
+
+    .put(
+      "/:id/alias",
+      async ({ params, body, user, set }) => {
+        const result = await execProcedure("iot.upsert_sensor_alias", [
+          { sensor_id: parseInt(params.id), user_id: (user as any).id, alias: (body as any).alias },
+        ]);
+        if (result.error) { set.status = 400; return { message: result.error }; }
+        return result.result;
+      },
+      {
+        requirePermission: PERMISSIONS.iot.rename_sensor_alias,
+        body: t.Object({ alias: t.String({ minLength: 1, maxLength: 200 }) }),
       },
     )
 
