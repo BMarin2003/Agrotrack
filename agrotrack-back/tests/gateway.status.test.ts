@@ -4,15 +4,18 @@ import { describe, it, expect } from "bun:test";
 function extractGatewayStatus(payload: {
   connectivity_mode?: string;
   pending_sync?: number;
-}): { connectivity_mode?: string; pending_sync_count?: number } | null {
+  gateway_battery?: number;
+}): { connectivity_mode?: string; pending_sync_count?: number; battery?: number } | null {
   const hasConnectivity = payload.connectivity_mode === "wifi" || payload.connectivity_mode === "sim";
   const hasPendingSync = typeof payload.pending_sync === "number";
+  const hasBattery = typeof payload.gateway_battery === "number";
 
-  if (!hasConnectivity && !hasPendingSync) return null;
+  if (!hasConnectivity && !hasPendingSync && !hasBattery) return null;
 
   return {
     ...(hasConnectivity ? { connectivity_mode: payload.connectivity_mode } : {}),
     ...(hasPendingSync ? { pending_sync_count: payload.pending_sync } : {}),
+    ...(hasBattery ? { battery: payload.gateway_battery } : {}),
   };
 }
 
@@ -37,12 +40,20 @@ describe("Estado de gateway — mapeo desde payload de telemetría", () => {
     expect(extractGatewayStatus({ pending_sync: 12 })).toEqual({ pending_sync_count: 12 });
   });
 
-  it("payload sin ninguno de los dos campos no genera actualización", () => {
+  it("gateway_battery se mapea a battery", () => {
+    expect(extractGatewayStatus({ gateway_battery: 87 })).toEqual({ battery: 87 });
+  });
+
+  it("gateway_battery=0 se mapea (bateria agotada, no se confunde con ausente)", () => {
+    expect(extractGatewayStatus({ gateway_battery: 0 })).toEqual({ battery: 0 });
+  });
+
+  it("payload sin ninguno de los tres campos no genera actualización", () => {
     expect(extractGatewayStatus({})).toBeNull();
   });
 
-  it("payload con ambos campos mapea los dos juntos", () => {
-    expect(extractGatewayStatus({ connectivity_mode: "sim", pending_sync: 3 }))
-      .toEqual({ connectivity_mode: "sim", pending_sync_count: 3 });
+  it("payload con los tres campos los mapea juntos", () => {
+    expect(extractGatewayStatus({ connectivity_mode: "sim", pending_sync: 3, gateway_battery: 55 }))
+      .toEqual({ connectivity_mode: "sim", pending_sync_count: 3, battery: 55 });
   });
 });

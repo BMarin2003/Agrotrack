@@ -38,11 +38,12 @@ export const TelemetryApi = new Elysia()
 
       const reading = { ...payload, gateway_id: gateway.id, received_at: new Date().toISOString() };
 
-      if (payload.connectivity_mode || typeof payload.pending_sync === 'number') {
+      if (payload.connectivity_mode || typeof payload.pending_sync === 'number' || typeof payload.gateway_battery === 'number') {
         await execProcedure('iot.update_gateway_status', [{
           gateway_id: gateway.id,
           connectivity_mode: payload.connectivity_mode,
           pending_sync_count: payload.pending_sync,
+          battery: payload.gateway_battery,
         }]);
       }
 
@@ -59,6 +60,7 @@ export const TelemetryApi = new Elysia()
         battery: t.Optional(t.Number()),
         connectivity_mode: t.Optional(t.Union([t.Literal('wifi'), t.Literal('sim')])),
         pending_sync: t.Optional(t.Number()),
+        gateway_battery: t.Optional(t.Number()),
         extra_data: t.Optional(t.Any()),
       }),
     })
