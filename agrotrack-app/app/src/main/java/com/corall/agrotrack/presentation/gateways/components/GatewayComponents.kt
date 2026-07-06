@@ -25,7 +25,9 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.SimCard
 import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.corall.agrotrack.domain.model.Gateway
+import com.corall.agrotrack.domain.model.GatewayConnectivityMode
 import com.corall.agrotrack.domain.model.GatewayStatus
 import com.corall.agrotrack.domain.model.SensorStatus
 import com.corall.agrotrack.domain.model.SensorSummary
@@ -182,10 +185,13 @@ fun GatewayCard(
                     modifier = Modifier.padding(top = 3.dp),
                 )
 
-                GatewayStatusPill(
-                    status = gateway.status,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 5.dp),
-                )
+                ) {
+                    GatewayStatusPill(status = gateway.status)
+                    ConnectivityIcon(mode = gateway.connectivityMode, modifier = Modifier.padding(start = 6.dp))
+                }
             }
 
             Icon(
@@ -376,6 +382,21 @@ private fun GatewayStatusPill(
             fontSize = 10.sp,
         )
     }
+}
+
+@Composable
+private fun ConnectivityIcon(
+    mode: GatewayConnectivityMode,
+    modifier: Modifier = Modifier,
+) {
+    if (mode == GatewayConnectivityMode.Unknown) return
+
+    Icon(
+        imageVector = if (mode == GatewayConnectivityMode.Wifi) Icons.Default.Wifi else Icons.Default.SimCard,
+        contentDescription = if (mode == GatewayConnectivityMode.Wifi) "Conectado por WiFi" else "Conectado por SIM",
+        tint = Muted,
+        modifier = modifier.size(12.dp),
+    )
 }
 
 private fun sensorIcon(type: String): ImageVector {
