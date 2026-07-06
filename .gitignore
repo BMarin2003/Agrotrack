@@ -27,3 +27,4 @@ graphify-out/
 .codegraph/
 supabase/
 skills-lock.json
+.worktrees/
