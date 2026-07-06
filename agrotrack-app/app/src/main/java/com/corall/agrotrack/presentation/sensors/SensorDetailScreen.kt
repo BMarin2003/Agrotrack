@@ -2,6 +2,7 @@ package com.corall.agrotrack.presentation.sensors
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,11 +11,15 @@ import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -29,6 +34,8 @@ import com.corall.agrotrack.domain.model.SensorStatus
 import com.corall.agrotrack.presentation.gateways.components.AgroGradient
 import com.corall.agrotrack.presentation.gateways.components.AgroHeader
 import com.corall.agrotrack.presentation.gateways.components.LoadingState
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -94,13 +101,30 @@ fun SensorDetailScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Timestamp última lectura
-            Text(
-                text     = "Última lectura: ${lastReadingText(uiState.receivedAt)}",
-                color    = Muted,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(start = 4.dp),
-            )
+            // Timestamp última lectura — tocar para alternar entre formato relativo y absoluto
+            var showAbsoluteTimestamp by remember { mutableStateOf(false) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .clickable { showAbsoluteTimestamp = !showAbsoluteTimestamp },
+            ) {
+                Text(
+                    text     = "Última lectura: " + if (showAbsoluteTimestamp)
+                        absoluteReadingText(uiState.receivedAt)
+                    else
+                        lastReadingText(uiState.receivedAt),
+                    color    = Muted,
+                    fontSize = 12.sp,
+                )
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = "Cambiar formato de fecha",
+                    tint = Muted,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -312,4 +336,9 @@ private fun lastReadingText(receivedAt: Long?): String {
         diff < 86_400_000 -> "Hace ${diff / 3_600_000} h"
         else              -> "Hace ${diff / 86_400_000} d"
     }
+}
+
+private fun absoluteReadingText(receivedAt: Long?): String {
+    if (receivedAt == null || receivedAt <= 0L) return "Sin lectura"
+    return SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(receivedAt))
 }
