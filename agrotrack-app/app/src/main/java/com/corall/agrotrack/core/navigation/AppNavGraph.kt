@@ -1,6 +1,10 @@
 package com.corall.agrotrack.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,6 +23,7 @@ import com.corall.agrotrack.presentation.home.HomeScreen
 import com.corall.agrotrack.presentation.installer.InstallerScreen
 import com.corall.agrotrack.presentation.reports.ReportsScreen
 import com.corall.agrotrack.presentation.sensors.SensorDetailScreen
+import com.corall.agrotrack.presentation.session.SessionViewModel
 import com.corall.agrotrack.presentation.settings.SettingsScreen
 import com.corall.agrotrack.presentation.support.HelpDeskScreen
 import com.corall.agrotrack.presentation.support.MaintenanceScreen
@@ -28,10 +33,25 @@ import com.corall.agrotrack.presentation.users.UsersScreen
 
 @Composable
 fun AppNavGraph(
-    navController: NavHostController = rememberNavController(),
+    navController:    NavHostController = rememberNavController(),
+    sessionViewModel: SessionViewModel   = hiltViewModel(),
 ) {
     val startDestination = if (SessionManager.isSessionActive()) Screen.Home.route
                            else Screen.Login.route
+
+    val sessionResult by sessionViewModel.result.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        sessionViewModel.verifySession()
+    }
+
+    LaunchedEffect(sessionResult) {
+        if (sessionResult == SessionViewModel.VerifyResult.INVALID) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
 
