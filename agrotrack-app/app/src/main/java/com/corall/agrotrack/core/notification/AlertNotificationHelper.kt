@@ -18,6 +18,7 @@ class AlertNotificationHelper @Inject constructor(
         private const val CHANNEL_THRESHOLD = "agrotrack_threshold"
         private const val CHANNEL_OFFLINE   = "agrotrack_offline"
         private const val CHANNEL_ANOMALY   = "agrotrack_anomaly"
+        private const val CHANNEL_RECOVERY  = "agrotrack_recovery"
     }
 
     fun createChannels() {
@@ -38,6 +39,11 @@ class AlertNotificationHelper @Inject constructor(
                 "Datos anómalos",
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply { description = "Lecturas fuera del rango físico o saltos bruscos" },
+            NotificationChannel(
+                CHANNEL_RECOVERY,
+                "Sensor recuperado",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply { description = "El sensor volvió a transmitir tras una desconexión" },
         ))
     }
 
@@ -67,6 +73,7 @@ class AlertNotificationHelper @Inject constructor(
         "sensor_offline"   -> CHANNEL_OFFLINE  to "Sensor desconectado"
         "anomalous_reading",
         "sensor_degraded"  -> CHANNEL_ANOMALY  to "Datos anómalos detectados"
+        "sensor_recovered" -> CHANNEL_RECOVERY to "Sensor recuperado"
         else -> null
     }
 
