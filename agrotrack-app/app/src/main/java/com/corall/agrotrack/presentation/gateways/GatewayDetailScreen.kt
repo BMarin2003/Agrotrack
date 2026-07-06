@@ -25,6 +25,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -52,6 +54,7 @@ import com.corall.agrotrack.presentation.gateways.components.AgroHeader
 import com.corall.agrotrack.presentation.gateways.components.EmptyState
 import com.corall.agrotrack.presentation.gateways.components.LoadingState
 import com.corall.agrotrack.presentation.gateways.components.SensorCard
+import com.corall.agrotrack.domain.model.SensorStatus
 
 private val Cyan     = Color(0xFF62C9FF)
 private val SoftCyan = Color(0xFF93DDFF)
@@ -65,6 +68,20 @@ private fun batteryColor(battery: Double): Color = when {
     battery >= 50 -> Color(0xFF22C55E)
     battery >= 20 -> Color(0xFFF59E0B)
     else          -> Color(0xFFEF4444)
+}
+
+private enum class SensorStatusFilter(val label: String) {
+    ALL("Todos"),
+    ACTIVE("Activos"),
+    INACTIVE("Inactivos"),
+    SUSPICIOUS("Sospechosos"),
+}
+
+private fun matchesFilter(status: SensorStatus, filter: SensorStatusFilter): Boolean = when (filter) {
+    SensorStatusFilter.ALL        -> true
+    SensorStatusFilter.ACTIVE     -> status == SensorStatus.Normal
+    SensorStatusFilter.INACTIVE   -> status == SensorStatus.Offline
+    SensorStatusFilter.SUSPICIOUS -> status == SensorStatus.Warning || status == SensorStatus.Critical
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,6 +171,28 @@ fun GatewayDetailScreen(
                 }
             }
 
+            var selectedFilter by remember { mutableStateOf(SensorStatusFilter.ALL) }
+            val filteredSensors = uiState.sensors.filter { matchesFilter(it.status, selectedFilter) }
+
+            if (uiState.sensors.isNotEmpty()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 14.dp),
+                ) {
+                    SensorStatusFilter.entries.forEach { filter ->
+                        FilterChip(
+                            selected = selectedFilter == filter,
+                            onClick  = { selectedFilter = filter },
+                            label    = { Text(filter.label, fontSize = 12.sp) },
+                            colors   = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Cyan,
+                                selectedLabelColor      = DarkBg,
+                            ),
+                        )
+                    }
+                }
+            }
+
             when {
                 uiState.isLoading -> LoadingState()
 
@@ -165,6 +204,10 @@ fun GatewayDetailScreen(
                     text = "No hay sensores disponibles",
                 )
 
+                filteredSensors.isEmpty() -> EmptyState(
+                    text = "Ningún sensor coincide con \"${selectedFilter.label}\"",
+                )
+
                 else -> {
                     LazyColumn(
                         modifier        = Modifier
@@ -174,7 +217,7 @@ fun GatewayDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         itemsIndexed(
-                            items = uiState.sensors,
+                            items = filteredSensors,
                             key   = { _, sensor -> sensor.id },
                         ) { index, sensor ->
                             SensorCard(
