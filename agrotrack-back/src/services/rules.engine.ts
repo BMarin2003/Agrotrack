@@ -12,6 +12,7 @@ interface Reading {
 
 interface Threshold {
   id: number;
+  user_id: number | null;
   metric: string;
   min_value: number | null;
   max_value: number | null;
@@ -55,6 +56,7 @@ class RulesEngine {
           await this.triggerAlert({
             sensor_id: reading.sensor_id,
             gateway_id: reading.gateway_id,
+            user_id: threshold.user_id,
             type: 'threshold_exceeded',
             metric: threshold.metric,
             value,
@@ -85,6 +87,7 @@ class RulesEngine {
       await this.triggerAlert({
         sensor_id: sensorId,
         gateway_id: gatewayId,
+        user_id: null,
         type: 'anomalous_reading',
         metric: 'temperature',
         value: temperature,
@@ -102,6 +105,7 @@ class RulesEngine {
         await this.triggerAlert({
           sensor_id: sensorId,
           gateway_id: gatewayId,
+          user_id: null,
           type: 'sensor_degraded',
           metric: 'temperature',
           message: `Sensor ${sensorId} posiblemente defectuoso: ${window.length} lecturas anómalas en 10 minutos`,
@@ -115,13 +119,14 @@ class RulesEngine {
   async triggerAlert(alert: {
     sensor_id: number;
     gateway_id: number;
+    user_id?: number | null;
     type: string;
     metric?: string;
     value?: number;
     threshold?: number;
     message: string;
   }) {
-    console.warn(`[Rules] ALERTA sensor=${alert.sensor_id} tipo=${alert.type} — ${alert.message}`);
+    console.warn(`[Rules] ALERTA sensor=${alert.sensor_id} tipo=${alert.type} user=${alert.user_id ?? 'sistema'} — ${alert.message}`);
 
     const result = await execProcedure('iot.save_alert', [alert]);
     if (result.error) {
