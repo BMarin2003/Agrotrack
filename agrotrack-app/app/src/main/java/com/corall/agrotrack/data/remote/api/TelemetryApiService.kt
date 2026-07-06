@@ -56,4 +56,11 @@ interface TelemetryApiService {
         @Query("to")       to:       String? = null,
         @Query("limit")    limit:    Int?    = null,
     ): Response<List<SensorReadingDto>>
+
+    @GET("reports/alerts/{gatewayId}")
+    suspend fun getAlertHistory(
+        @Path("gatewayId") gatewayId: Int,
+        @Query("from") from: String? = null,
+        @Query("to")   to:   String? = null,
+    ): Response<List<AlertDto>>
 }

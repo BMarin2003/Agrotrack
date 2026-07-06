@@ -18,4 +18,5 @@ interface TelemetryRepository {
     suspend fun getThresholdConfig(sensorId: Int): Result<ThresholdConfig?>
     suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit>
     suspend fun getReportHistory(sensorId: Int, from: String?, to: String?): Result<List<SensorReading>>
+    suspend fun getAlertHistory(gatewayId: Int, from: String? = null, to: String? = null): Result<List<Alert>>
 }

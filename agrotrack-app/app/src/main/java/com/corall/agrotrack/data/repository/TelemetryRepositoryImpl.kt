@@ -139,6 +139,14 @@ class TelemetryRepositoryImpl @Inject constructor(
         response.body().orEmpty().map { it.toDomain() }
     }
 
+    override suspend fun getAlertHistory(gatewayId: Int, from: String?, to: String?): Result<List<Alert>> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching MockData.mockAlerts.toList()
+
+        val response = api.getAlertHistory(gatewayId, from, to)
+        if (!response.isSuccessful) error("No se pudo cargar el historial de alertas")
+        response.body().orEmpty().map { it.toDomain() }
+    }
+
     override suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit> = runCatching {
         if (MockConfig.ENABLED) {
             MockData.saveThresholdConfig(config)
