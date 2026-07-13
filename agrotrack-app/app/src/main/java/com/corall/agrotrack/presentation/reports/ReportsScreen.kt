@@ -18,9 +18,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.corall.agrotrack.domain.model.Sensor
 import com.corall.agrotrack.domain.model.SensorReading
-import com.corall.agrotrack.presentation.gateways.components.AgroGradient
-import com.corall.agrotrack.presentation.gateways.components.AgroHeader
-import com.corall.agrotrack.presentation.gateways.components.LoadingState
+import com.corall.agrotrack.presentation.common.components.AgroGradient
+import com.corall.agrotrack.presentation.common.components.AgroHeader
+import com.corall.agrotrack.presentation.common.components.LoadingState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -21,8 +21,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.corall.agrotrack.domain.model.Gateway
 import com.corall.agrotrack.domain.model.GatewayStatus
-import com.corall.agrotrack.presentation.gateways.components.AgroGradient
-import com.corall.agrotrack.presentation.gateways.components.LoadingState
+import com.corall.agrotrack.presentation.common.components.AgroGradient
+import com.corall.agrotrack.presentation.common.components.LoadingState
 
 private val Cyan   = Color(0xFF62C9FF)
 private val Muted  = Color(0xFF94A3B8)

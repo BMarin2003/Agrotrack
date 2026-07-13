@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Bolt
@@ -32,7 +31,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -52,8 +50,6 @@ import com.corall.agrotrack.domain.model.SensorSummary
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private val BackgroundTop = Color(0xFF020B17)
-private val BackgroundBottom = Color(0xFF061C31)
 private val CardColor = Color(0xFF132238)
 private val CardColorAlt = Color(0xFF101D30)
 private val Cyan = Color(0xFF62C9FF)
@@ -62,47 +58,6 @@ private val Green = Color(0xFF22C55E)
 private val Blue = Color(0xFF38BDF8)
 private val Muted = Color(0xFF94A3B8)
 private val White = Color(0xFFF8FAFC)
-
-@Composable
-fun AgroGradient(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(BackgroundTop, BackgroundBottom),
-                ),
-            ),
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun AgroHeader(onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 26.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "AgroTrack",
-            color = White,
-            fontSize = 29.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.weight(1f),
-        )
-
-        IconButton(onClick = onBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Regresar",
-                tint = White,
-            )
-        }
-    }
-}
 
 @Composable
 fun SectionTitle(
@@ -292,30 +247,6 @@ fun SensorCard(
                 modifier = Modifier.size(26.dp),
             )
         }
-    }
-}
-
-@Composable
-fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(color = Cyan)
-    }
-}
-
-@Composable
-fun EmptyState(text: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = Muted,
-            fontSize = 14.sp,
-        )
     }
 }
 

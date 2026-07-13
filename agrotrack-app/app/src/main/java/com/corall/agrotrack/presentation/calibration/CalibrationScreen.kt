@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.corall.agrotrack.presentation.gateways.components.AgroGradient
-import com.corall.agrotrack.presentation.gateways.components.AgroHeader
+import com.corall.agrotrack.presentation.common.components.AgroGradient
+import com.corall.agrotrack.presentation.common.components.AgroHeader
 
 private val Cyan   = Color(0xFF62C9FF)
 private val Muted  = Color(0xFF94A3B8)

@@ -18,11 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.corall.agrotrack.presentation.gateways.components.AgroGradient
-import com.corall.agrotrack.presentation.gateways.components.AgroHeader
-import com.corall.agrotrack.presentation.gateways.components.EmptyState
+import com.corall.agrotrack.presentation.common.components.AgroGradient
+import com.corall.agrotrack.presentation.common.components.AgroHeader
+import com.corall.agrotrack.presentation.common.components.EmptyState
 import com.corall.agrotrack.presentation.gateways.components.GatewayCard
-import com.corall.agrotrack.presentation.gateways.components.LoadingState
+import com.corall.agrotrack.presentation.common.components.LoadingState
 import com.corall.agrotrack.presentation.gateways.components.SectionTitle
 
 @Composable
