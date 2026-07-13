@@ -85,7 +85,7 @@ fun UsersScreen(
                                     user     = user,
                                     onEdit   = { viewModel.openEdit(user) },
                                     onToggle = { viewModel.toggleEnable(user) },
-                                    onDelete = { viewModel.delete(user) },
+                                    onDelete = { viewModel.requestDelete(user) },
                                 )
                             }
                         }

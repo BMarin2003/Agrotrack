@@ -79,16 +79,47 @@ class UsersViewModel @Inject constructor(
     }
 
     fun toggleEnable(user: UserItemDto) {
+        _uiState.update { it.copy(processingUserIds = it.processingUserIds + user.id) }
         viewModelScope.launch {
-            runCatching { api.updateUser(user.id, UserUpdateDto(enable = !(user.enable ?: true))) }
-                .onSuccess { load() }
+            val resp = runCatching { api.updateUser(user.id, UserUpdateDto(enable = !(user.enable ?: true))) }
+            resp.onSuccess { r ->
+                _uiState.update { it.copy(processingUserIds = it.processingUserIds - user.id) }
+                if (r.isSuccessful) load()
+                else _uiState.update { it.copy(actionError = "No se pudo actualizar el estado del usuario") }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(
+                        processingUserIds = it.processingUserIds - user.id,
+                        actionError       = e.message ?: "No se pudo actualizar el estado del usuario",
+                    )
+                }
+            }
         }
     }
 
-    fun delete(user: UserItemDto) {
+    fun requestDelete(user: UserItemDto) = _uiState.update { it.copy(confirmDeleteUser = user) }
+
+    fun cancelDelete() = _uiState.update { it.copy(confirmDeleteUser = null) }
+
+    fun confirmDelete() {
+        val user = _uiState.value.confirmDeleteUser ?: return
+        _uiState.update { it.copy(confirmDeleteUser = null, processingUserIds = it.processingUserIds + user.id) }
         viewModelScope.launch {
-            runCatching { api.deleteUser(user.id) }
-                .onSuccess { load() }
+            val resp = runCatching { api.deleteUser(user.id) }
+            resp.onSuccess { r ->
+                _uiState.update { it.copy(processingUserIds = it.processingUserIds - user.id) }
+                if (r.isSuccessful) load()
+                else _uiState.update { it.copy(actionError = "No se pudo eliminar el usuario") }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(
+                        processingUserIds = it.processingUserIds - user.id,
+                        actionError       = e.message ?: "No se pudo eliminar el usuario",
+                    )
+                }
+            }
         }
     }
+
+    fun dismissActionError() = _uiState.update { it.copy(actionError = null) }
 }
