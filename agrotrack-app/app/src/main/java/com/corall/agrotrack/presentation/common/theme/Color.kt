@@ -24,3 +24,15 @@ val StatusNormal   = Color(0xFF43A047)   // Verde
 val StatusWarning  = Color(0xFFFFA726)   // Ámbar
 val StatusCritical = Color(0xFFEF5350)   // Rojo
 val StatusOffline  = Color(0xFF9E9E9E)   // Gris
+
+// Sistema A — "AgroGradient" (Gateways/Users/Reports). Tokens nuevos: antes vivían como
+// `Color(0xFF...)` privados y duplicados en cada pantalla que usaba este look.
+val AccentCyan     = Color(0xFF62C9FF)
+val GradientTop    = Color(0xFF020B17)
+val GradientBottom = Color(0xFF061C31)
+val SurfaceCard    = Color(0xFF132238)
+val TextOnDark     = Color(0xFFF8FAFC)
+val TextMutedOnDark = Color(0xFF94A3B8)
+val AccentGreen    = Color(0xFF22C55E)
+val AccentRed      = Color(0xFFEF4444)
+val InfoBlue       = Color(0xFF93C5FD)
