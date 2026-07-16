@@ -34,7 +34,8 @@ private val Red    = Color(0xFFEF4444)
 
 private val RANGES = listOf("24h", "7d", "30d")
 
-// HUs: seleccionar sensor, definir rango, gráfico historial, resumen estadístico
+// HUs: seleccionar sensor(es), definir rango (fijo o personalizado), generar
+// con un toque, gráfico historial, resumen estadístico
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
@@ -42,6 +43,17 @@ fun ReportsScreen(
     viewModel: ReportsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        CustomRangeDialog(
+            onDismiss = { showDatePicker = false },
+            onConfirm = { from, to ->
+                viewModel.setCustomRange(from, to)
+                showDatePicker = false
+            },
+        )
+    }
 
     AgroGradient {
         Column(
@@ -58,7 +70,7 @@ fun ReportsScreen(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text     = "Selecciona un sensor y rango de tiempo.",
+                text     = "Selecciona uno o más sensores y el período a analizar.",
                 color    = Muted,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -73,17 +85,17 @@ fun ReportsScreen(
                 return@Column
             }
 
-            SensorDropdown(
-                sensors        = uiState.sensors,
-                selected       = uiState.selectedSensor,
-                onSelectSensor = viewModel::selectSensor,
+            SensorMultiSelect(
+                sensors  = uiState.sensors,
+                selected = uiState.selectedSensors,
+                onToggle = viewModel::toggleSensor,
             )
 
             Spacer(Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 RANGES.forEach { range ->
-                    val active = uiState.range == range
+                    val active = !uiState.isCustomRange && uiState.range == range
                     FilterChip(
                         selected = active,
                         onClick  = { viewModel.selectRange(range) },
@@ -94,9 +106,40 @@ fun ReportsScreen(
                         ),
                     )
                 }
+                FilterChip(
+                    selected = uiState.isCustomRange,
+                    onClick  = { showDatePicker = true },
+                    label    = { Text("Personalizado") },
+                    colors   = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Cyan,
+                        selectedLabelColor     = Color(0xFF0D1B2A),
+                    ),
+                )
             }
 
             Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick  = viewModel::loadReport,
+                enabled  = uiState.selectedSensors.isNotEmpty() && !uiState.isLoadingReport,
+                modifier = Modifier.fillMaxWidth(),
+                colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
+            ) {
+                if (uiState.isLoadingReport) {
+                    CircularProgressIndicator(color = Color(0xFF0D1B2A), strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                } else {
+                    Text("Generar reporte", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            if (!uiState.hasGenerated) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Configura los filtros y genera el reporte", color = Muted, fontSize = 14.sp)
+                }
+                return@Column
+            }
 
             if (uiState.isLoadingReport) {
                 LoadingState()
@@ -108,29 +151,53 @@ fun ReportsScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            val readings = uiState.readings
-            if (readings.isEmpty()) {
+            val reports = uiState.reports
+            if (reports.values.all { it.isEmpty() }) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Sin datos para el rango seleccionado", color = Muted, fontSize = 14.sp)
+                    Text("Sin datos para el período seleccionado", color = Muted, fontSize = 14.sp)
                 }
                 return@Column
             }
 
-            SummaryCard(readings)
-            Spacer(Modifier.height(12.dp))
-            SparklineChart(readings)
-            Spacer(Modifier.height(16.dp))
+            if (reports.size == 1) {
+                val readings = reports.values.first()
+                SummaryCard(readings)
+                Spacer(Modifier.height(12.dp))
+                SparklineChart(readings)
+                Spacer(Modifier.height(16.dp))
 
-            Text("Lecturas", color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(8.dp))
+                Text("Lecturas", color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
 
-            LazyColumn(
-                modifier            = Modifier.fillMaxSize(),
-                contentPadding      = PaddingValues(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(readings.asReversed(), key = { it.id }) { reading ->
-                    ReadingRow(reading)
+                LazyColumn(
+                    modifier            = Modifier.fillMaxSize(),
+                    contentPadding      = PaddingValues(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(readings.asReversed(), key = { it.id }) { reading ->
+                        ReadingRow(reading)
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier            = Modifier.fillMaxSize(),
+                    contentPadding      = PaddingValues(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(uiState.selectedSensors.toList(), key = { it.id }) { sensor ->
+                        val readings = reports[sensor.id].orEmpty()
+                        Column {
+                            Text(sensor.name, color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(8.dp))
+                            if (readings.isEmpty()) {
+                                Text("Sin datos en el período", color = Muted, fontSize = 12.sp)
+                            } else {
+                                SummaryCard(readings)
+                                Spacer(Modifier.height(8.dp))
+                                SparklineChart(readings)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -139,19 +206,24 @@ fun ReportsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SensorDropdown(
-    sensors:        List<Sensor>,
-    selected:       Sensor?,
-    onSelectSensor: (Sensor) -> Unit,
+private fun SensorMultiSelect(
+    sensors:  List<Sensor>,
+    selected: Set<Sensor>,
+    onToggle: (Sensor) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val label = when {
+        selected.isEmpty()  -> "Seleccionar sensor(es)"
+        selected.size == 1  -> selected.first().name
+        else                -> "${selected.size} sensores seleccionados"
+    }
 
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value         = selected?.name ?: "Seleccionar sensor",
+            value         = label,
             onValueChange = {},
             readOnly      = true,
-            label         = { Text("Sensor", color = Muted) },
+            label         = { Text("Sensores", color = Muted) },
             trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors        = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor   = Cyan,
@@ -168,11 +240,48 @@ private fun SensorDropdown(
         ) {
             sensors.forEach { sensor ->
                 DropdownMenuItem(
-                    text    = { Text(sensor.name, color = White) },
-                    onClick = { onSelectSensor(sensor); expanded = false },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = selected.contains(sensor),
+                                onCheckedChange = { onToggle(sensor) },
+                                colors = CheckboxDefaults.colors(checkedColor = Cyan),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(sensor.name, color = White)
+                        }
+                    },
+                    // No cerramos el menú: el usuario puede tildar varios sensores seguidos.
+                    onClick = { onToggle(sensor) },
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomRangeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (fromMs: Long, toMs: Long) -> Unit,
+) {
+    val state = rememberDateRangePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val from = state.selectedStartDateMillis
+                    val to   = state.selectedEndDateMillis
+                    if (from != null && to != null) onConfirm(from, to)
+                },
+                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
+            ) { Text("Aplicar") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    ) {
+        DateRangePicker(state = state, modifier = Modifier.weight(1f))
     }
 }
 

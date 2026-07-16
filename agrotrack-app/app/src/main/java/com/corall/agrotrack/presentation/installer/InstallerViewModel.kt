@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.corall.agrotrack.domain.repository.GatewayRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,10 +45,34 @@ class InstallerViewModel @Inject constructor(
         val gatewayId = s.selectedGatewayId ?: run { _uiState.update { it.copy(error = "Selecciona un gateway") }; return }
         if (s.ssid.isBlank()) { _uiState.update { it.copy(error = "El SSID no puede estar vacío") }; return }
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, error = null, success = false) }
+            _uiState.update { it.copy(isSaving = true, error = null, success = false, confirmed = false) }
+            val beforeReadingAt = gatewayRepo.getGatewayById(gatewayId).getOrNull()?.lastReadingAt
             gatewayRepo.updateGatewayWifi(gatewayId, s.ssid.trim(), s.password.ifBlank { null }, "WPA2")
-                .onSuccess { _uiState.update { it.copy(isSaving = false, success = true) } }
+                .onSuccess {
+                    _uiState.update { it.copy(isSaving = false, success = true, verifying = true) }
+                    verifyConnection(gatewayId, beforeReadingAt)
+                }
                 .onFailure { e -> _uiState.update { it.copy(isSaving = false, error = e.message) } }
+        }
+    }
+
+    /**
+     * No hay handshake real con el gateway físico tras guardar el WiFi — la única señal
+     * disponible es si vuelve a llegar telemetría. Pollea unas cuantas veces con timeout
+     * en vez de asumir éxito solo porque el guardado en BD funcionó.
+     */
+    private fun verifyConnection(gatewayId: Int, beforeReadingAt: Long?) {
+        viewModelScope.launch {
+            repeat(3) {
+                delay(5_000)
+                val gateway = gatewayRepo.getGatewayById(gatewayId).getOrNull()
+                val reconnected = gateway?.lastReadingAt != null && gateway.lastReadingAt != beforeReadingAt
+                if (reconnected) {
+                    _uiState.update { it.copy(verifying = false, confirmed = true) }
+                    return@launch
+                }
+            }
+            _uiState.update { it.copy(verifying = false, confirmed = false) }
         }
     }
 

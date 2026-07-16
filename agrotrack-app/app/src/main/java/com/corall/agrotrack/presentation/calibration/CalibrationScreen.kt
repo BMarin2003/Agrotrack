@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +31,12 @@ fun CalibrationScreen(
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
 
-    LaunchedEffect(uiState.success) {
-        if (uiState.success) snackbarHost.showSnackbar("Calibración aplicada correctamente")
+    LaunchedEffect(uiState.ackState) {
+        when (uiState.ackState) {
+            CalibrationAckState.CONFIRMED -> snackbarHost.showSnackbar("El sensor confirmó la nueva calibración")
+            CalibrationAckState.TIMEOUT   -> snackbarHost.showSnackbar("Guardado, pero el sensor no confirmó — verifica la conexión")
+            else -> {}
+        }
     }
     LaunchedEffect(uiState.error) {
         uiState.error?.let { snackbarHost.showSnackbar(it) }
@@ -137,9 +142,26 @@ fun CalibrationScreen(
 
                 Spacer(Modifier.weight(1f))
 
+                when (uiState.ackState) {
+                    CalibrationAckState.WAITING -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        CircularProgressIndicator(Modifier.size(14.dp), color = Cyan, strokeWidth = 2.dp)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Enviado, esperando confirmación del sensor…", color = Muted, fontSize = 12.sp)
+                    }
+                    CalibrationAckState.CONFIRMED -> Text(
+                        "✅ Confirmado por el sensor",
+                        color = Color(0xFF22C55E), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    CalibrationAckState.TIMEOUT -> Text(
+                        "⚠️ Sin confirmación del sensor — verifica la conexión o intervén presencialmente",
+                        color = Orange, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    CalibrationAckState.NONE -> {}
+                }
+
                 Button(
                     onClick  = vm::save,
-                    enabled  = !uiState.isSaving && !uiState.isLoading,
+                    enabled  = !uiState.isSaving && !uiState.isLoading && uiState.ackState != CalibrationAckState.WAITING,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                     colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
                 ) {

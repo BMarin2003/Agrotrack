@@ -11,6 +11,9 @@ data class InstallerUiState(
     val password:          String        = "",
     val isSaving:          Boolean       = false,
     val success:           Boolean       = false,
+    // Verificación post-guardado: ¿el gateway realmente volvió a reportar datos?
+    val verifying:         Boolean       = false,
+    val confirmed:         Boolean       = false,
     val error:             String?       = null,
     // PIN
     val pin:               String        = "",

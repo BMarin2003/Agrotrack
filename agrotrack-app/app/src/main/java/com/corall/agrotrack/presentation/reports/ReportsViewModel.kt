@@ -6,6 +6,8 @@ import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.domain.model.Sensor
 import com.corall.agrotrack.domain.repository.TelemetryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +47,10 @@ class ReportsViewModel @Inject constructor(
                             )
                         }
                     _uiState.update { it.copy(isLoadingSensors = false, sensors = sensors) }
-                    sensors.firstOrNull()?.let { selectSensor(it) }
+                    sensors.firstOrNull()?.let {
+                        _uiState.update { s -> s.copy(selectedSensors = setOf(it)) }
+                        loadReport()
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(isLoadingSensors = false, error = e.message) }
@@ -53,37 +58,53 @@ class ReportsViewModel @Inject constructor(
         }
     }
 
-    fun selectSensor(sensor: Sensor) {
-        _uiState.update { it.copy(selectedSensor = sensor) }
-        loadReport()
+    /** Alterna la selección de un sensor para el reporte (multi-selección). */
+    fun toggleSensor(sensor: Sensor) {
+        _uiState.update { state ->
+            val current = state.selectedSensors
+            val next = if (current.contains(sensor)) current - sensor else current + sensor
+            state.copy(selectedSensors = next)
+        }
     }
 
     fun selectRange(range: String) {
-        _uiState.update { it.copy(range = range) }
-        loadReport()
+        _uiState.update { it.copy(range = range, customFrom = null, customTo = null) }
+    }
+
+    fun setCustomRange(fromMs: Long, toMs: Long) {
+        _uiState.update { it.copy(customFrom = fromMs, customTo = toMs) }
     }
 
     fun loadReport() {
         val state = _uiState.value
-        val sensorId = state.selectedSensor?.id ?: return
+        val sensorIds = state.selectedSensors.map { it.id }
+        if (sensorIds.isEmpty()) return
+
         val nowMs = System.currentTimeMillis()
-        val fromMs = when (state.range) {
+        val fromMs = state.customFrom ?: when (state.range) {
             "7d"  -> nowMs - 7 * 86_400_000L
             "30d" -> nowMs - 30 * 86_400_000L
             else  -> nowMs - 86_400_000L
         }
+        val toMs = state.customTo ?: nowMs
         val from = Instant.ofEpochMilli(fromMs).toString()
-        val to   = Instant.ofEpochMilli(nowMs).toString()
+        val to   = Instant.ofEpochMilli(toMs).toString()
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingReport = true, error = null) }
-            telemetryRepo.getReportHistory(sensorId, from, to)
-                .onSuccess { readings ->
-                    _uiState.update { it.copy(isLoadingReport = false, readings = readings) }
+            _uiState.update { it.copy(isLoadingReport = true, error = null, hasGenerated = true) }
+            runCatching {
+                coroutineScope {
+                    sensorIds.map { id ->
+                        async { id to telemetryRepo.getReportHistory(id, from, to) }
+                    }.map { it.await() }
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(isLoadingReport = false, error = e.message) }
-                }
+            }.onSuccess { results ->
+                val firstError = results.firstNotNullOfOrNull { (_, r) -> r.exceptionOrNull() }
+                val reports = results.associate { (id, r) -> id to (r.getOrNull() ?: emptyList()) }
+                _uiState.update { it.copy(isLoadingReport = false, reports = reports, error = firstError?.message) }
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoadingReport = false, error = e.message) }
+            }
         }
     }
 }

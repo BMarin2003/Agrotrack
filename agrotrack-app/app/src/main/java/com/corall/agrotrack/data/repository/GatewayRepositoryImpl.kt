@@ -13,12 +13,24 @@ import com.corall.agrotrack.domain.model.GatewayConnectivityMode
 import com.corall.agrotrack.domain.model.GatewayStatus
 import com.corall.agrotrack.domain.model.Sensor
 import com.corall.agrotrack.domain.repository.GatewayRepository
+import com.google.gson.Gson
+import retrofit2.Response
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
 class GatewayRepositoryImpl @Inject constructor(
-    private val api: SensorsApiService,
+    private val api:  SensorsApiService,
+    private val gson: Gson,
 ) : GatewayRepository {
+
+    /** Extrae el mensaje real del backend (`{ message: "..." }`) del body de error, si existe. */
+    private fun errorMessageOrDefault(response: Response<*>, fallback: String): String {
+        val raw = response.errorBody()?.string().orEmpty()
+        val parsed = runCatching { gson.fromJson(raw, ErrorBody::class.java)?.message }.getOrNull()
+        return parsed?.takeIf { it.isNotBlank() } ?: fallback
+    }
+
+    private data class ErrorBody(val message: String?)
 
     override suspend fun getGateways(): Result<List<Gateway>> = runCatching {
         if (MockConfig.ENABLED) return@runCatching MockData.gateways
@@ -56,14 +68,14 @@ class GatewayRepositoryImpl @Inject constructor(
         if (MockConfig.ENABLED) return@runCatching
 
         val response = api.updateGatewayWifi(gatewayId, WifiConfigDto(ssid, password, security))
-        if (!response.isSuccessful) error("No se pudo actualizar la configuración WiFi")
+        if (!response.isSuccessful) error(errorMessageOrDefault(response, "No se pudo actualizar la configuración WiFi"))
     }
 
     override suspend fun updateGatewayPin(gatewayIds: List<Int>, pin: String): Result<Unit> = runCatching {
         if (MockConfig.ENABLED) return@runCatching
 
         val response = api.setGatewayPin(PinConfigDto(gatewayIds, pin))
-        if (!response.isSuccessful) error("No se pudo actualizar el PIN")
+        if (!response.isSuccessful) error(errorMessageOrDefault(response, "No se pudo actualizar el PIN"))
     }
 
     override suspend fun getSensorAlias(sensorId: Int): Result<String?> = runCatching {
@@ -96,6 +108,7 @@ class GatewayRepositoryImpl @Inject constructor(
             battery = battery,
             connectivityMode = GatewayConnectivityMode.from(connectivityMode),
             pendingSyncCount = pendingSyncCount ?: 0,
+            nextMaintenanceDate = nextMaintenance,
         )
     }
 

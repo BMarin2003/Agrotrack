@@ -23,6 +23,8 @@ class MqttService {
   private client: mqtt.MqttClient | null = null;
   // Cache: "gatewayId:slaveIdentifier" → sensor DB id
   private sensorCache = new Map<string, number>();
+  // Cache: gateway identifier → { id, name }
+  private gatewayCache = new Map<string, { id: number; name: string }>();
   // Tracking de Slaves únicos para diagnóstico
   private uniqueSlaves = new Set<string>();
 
@@ -44,9 +46,21 @@ class MqttService {
         if (err) console.error('[MQTT] Error al suscribirse:', err);
         else console.log(`[MQTT] Suscrito a ${topic}`);
       });
+
+      // Ack de comandos (ej. calibración) — esquema propuesto, sin firmware
+      // real implementado todavía. Ver migración 009.
+      const ackTopic = `${topicPrefix}/+/ack/calibration`;
+      this.client!.subscribe(ackTopic, err => {
+        if (err) console.error('[MQTT] Error al suscribirse al ack:', err);
+        else console.log(`[MQTT] Suscrito a ${ackTopic}`);
+      });
     });
 
     this.client.on('message', async (topic, message) => {
+      if (topic.includes('/ack/calibration')) {
+        await this.handleCalibrationAck(message);
+        return;
+      }
       await this.handleMessage(topic, message);
     });
 
@@ -90,18 +104,57 @@ class MqttService {
     return newId;
   }
 
+  private async resolveGateway(identifier: string): Promise<{ id: number; name: string } | null> {
+    if (this.gatewayCache.has(identifier)) {
+      return this.gatewayCache.get(identifier)!;
+    }
+
+    const found = await execProcedure('iot.get_gateway_by_identifier', [{ identifier }]);
+    if (!found.error && found.result) {
+      this.gatewayCache.set(identifier, found.result);
+      return found.result;
+    }
+
+    // El gateway físico ya existe y está transmitiendo — igual que con los
+    // sensores (resolveSensorId), no tiene sentido bloquear su telemetría
+    // esperando que alguien lo dé de alta a mano en la app/API.
+    const created = await execProcedure('iot.save_gateway', [{
+      name: `Gateway ${identifier}`,
+      identifier,
+    }]);
+
+    if (created.error || !created.result?.id) {
+      console.error('[MQTT] No se pudo auto-crear gateway:', identifier, created.error);
+      return null;
+    }
+
+    const gateway = { id: created.result.id, name: `Gateway ${identifier}` };
+    console.log(`[MQTT] Gateway auto-creado: ${identifier} → id=${gateway.id}`);
+    this.gatewayCache.set(identifier, gateway);
+    return gateway;
+  }
+
   private async handleMessage(topic: string, rawMessage: Buffer) {
     try {
       const { topicSubscribe, gatewayUid, topicPrefix } = configServer.mqtt;
 
+      // TEMPORAL — quitar una vez confirmado qué claves manda el gateway real
+      // (voltaje, ConnMode, PendingSync). Loguea el JSON tal cual llega, sin
+      // pasar por la interfaz TwarmPayload, para no ocultar campos inesperados.
+      console.log(`[MQTT][DEBUG PAYLOAD] topic=${topic} raw=${rawMessage.toString()}`);
+
+      const payload: TwarmPayload = JSON.parse(rawMessage.toString());
+
       let gatewayIdentifier: string;
       if (topicSubscribe) {
-        gatewayIdentifier = gatewayUid;
+        // Tópico fijo compartido por varios gateways (no wildcard por gateway):
+        // el identificador real viene DENTRO del payload, no del tópico.
+        // MQTT_GATEWAY_UID queda solo como fallback si algún mensaje llegara
+        // sin GatewayID.
+        gatewayIdentifier = payload.GatewayID != null ? String(payload.GatewayID) : gatewayUid;
       } else {
         gatewayIdentifier = topic.split('/')[2];
       }
-
-      const payload: TwarmPayload = JSON.parse(rawMessage.toString());
 
       // Diagnóstico: registrar Slaves únicos vistos
       if (!this.uniqueSlaves.has(payload.Slave)) {
@@ -109,13 +162,8 @@ class MqttService {
         console.log(`[MQTT] Slave nuevo: ${payload.Slave} (total únicos: ${this.uniqueSlaves.size}) → [${[...this.uniqueSlaves].join(', ')}]`);
       }
 
-      const gatewayResult = await execProcedure('iot.get_gateway_by_identifier', [{ identifier: gatewayIdentifier }]);
-      if (gatewayResult.error || !gatewayResult.result) {
-        console.warn(`[MQTT] Gateway no registrado: ${gatewayIdentifier}`);
-        return;
-      }
-
-      const gateway = gatewayResult.result;
+      const gateway = await this.resolveGateway(gatewayIdentifier);
+      if (!gateway) return;
 
       if (payload.ConnMode || typeof payload.PendingSync === 'number' || typeof payload.Bg === 'number') {
         await execProcedure('iot.update_gateway_status', [{
@@ -164,6 +212,40 @@ class MqttService {
 
     } catch (error) {
       console.error('[MQTT] Error procesando mensaje:', error);
+    }
+  }
+
+  /** Publica un comando al gateway. No hay garantía de entrega ni de que el
+   *  firmware exista todavía — el llamador es responsable del timeout. */
+  private publish(topic: string, payload: unknown) {
+    if (!this.client) {
+      console.warn('[MQTT] publish() llamado sin cliente conectado, se ignora:', topic);
+      return;
+    }
+    this.client.publish(topic, JSON.stringify(payload), err => {
+      if (err) console.error('[MQTT] Error al publicar:', topic, err);
+    });
+  }
+
+  /** Comando de calibración — esquema propuesto (ver migración 009), sin
+   *  firmware real todavía. requestId permite correlacionar el ack. */
+  publishCalibrationCommand(gatewayIdentifier: string, payload: {
+    requestId: string; slave: string; gain: number; intercept: number;
+  }) {
+    const { topicPrefix } = configServer.mqtt;
+    this.publish(`${topicPrefix}/${gatewayIdentifier}/cmd/calibration`, payload);
+  }
+
+  private async handleCalibrationAck(rawMessage: Buffer) {
+    try {
+      const payload = JSON.parse(rawMessage.toString());
+      if (!payload.requestId) return;
+      await execProcedure('iot.mark_calibration_ack', [{
+        request_id: payload.requestId,
+        status: payload.status === 'error' ? 'error' : 'ok',
+      }]);
+    } catch (error) {
+      console.error('[MQTT] Error procesando ack de calibración:', error);
     }
   }
 

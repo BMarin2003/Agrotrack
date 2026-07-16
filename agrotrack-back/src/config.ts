@@ -33,7 +33,10 @@ export const configServer = {
     password: process.env.MQTT_PASSWORD || '',
     clientId: process.env.MQTT_CLIENT_ID || `agrotrack-server-${Date.now()}`,
     topicPrefix: 'agrotrack/gateways',
-    // Si el dispositivo publica en un topic fijo, configurar estas dos variables:
+    // Si varios gateways publican en un mismo topic fijo (no wildcard por
+    // gateway), configurar MQTT_TOPIC_SUBSCRIBE — el gateway se identifica
+    // por el campo GatewayID de cada mensaje, no por este UID. gatewayUid
+    // queda solo como fallback para mensajes sin GatewayID.
     topicSubscribe: process.env.MQTT_TOPIC_SUBSCRIBE || '',
     gatewayUid: process.env.MQTT_GATEWAY_UID || '',
   },

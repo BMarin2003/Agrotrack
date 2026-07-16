@@ -9,6 +9,7 @@ export const PERMISSIONS = {
     manage_thresholds:   'iot.manage_thresholds',
     view_reports:        'iot.view_reports',
     manage_gateways:     'iot.manage_gateways',
+    manage_helpdesk:     'iot.manage_helpdesk',
   },
   admin: {
     manage_users: 'admin.manage_users',

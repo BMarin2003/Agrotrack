@@ -65,8 +65,10 @@ export const TelemetryApi = new Elysia()
       }),
     })
 
-    .get('/latest/:gateway_id', async ({ params, set }) => {
-      const result = await execProcedure('iot.get_latest_readings_by_gateway', [{ gateway_id: parseInt(params.gateway_id) }]);
+    .get('/latest/:gateway_id', async ({ params, user, set }) => {
+      const result = await execProcedure('iot.get_latest_readings_by_gateway', [
+        { gateway_id: parseInt(params.gateway_id), user_id: (user as any).id },
+      ]);
       if (result.error) { set.status = 500; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.view_telemetry })

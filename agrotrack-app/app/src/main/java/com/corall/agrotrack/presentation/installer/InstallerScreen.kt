@@ -140,13 +140,26 @@ fun InstallerScreen(
             )
 
             uiState.error?.let { Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
-            if (uiState.success) Text("WiFi configurado correctamente", color = Green, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            when {
+                uiState.verifying -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+                    CircularProgressIndicator(Modifier.size(14.dp), color = Cyan, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Guardado. Verificando conexión del gateway…", color = Muted, fontSize = 12.sp)
+                }
+                uiState.confirmed -> Text("Conectado correctamente", color = Green, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                uiState.success   -> Text(
+                    "Guardado. No se detectó conexión del gateway aún — verifica manualmente.",
+                    color    = Color(0xFFF59E0B),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
 
             Button(
                 onClick  = viewModel::submitWifi,
-                enabled  = !uiState.isSaving && uiState.selectedGatewayId != null,
+                enabled  = !uiState.isSaving && !uiState.verifying && uiState.selectedGatewayId != null,
                 modifier = Modifier.fillMaxWidth(),
                 colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
             ) {

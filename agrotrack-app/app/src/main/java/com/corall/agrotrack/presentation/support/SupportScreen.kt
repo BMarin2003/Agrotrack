@@ -155,6 +155,12 @@ private fun GatewayMaintenanceCard(gateway: Gateway, onClick: () -> Unit) {
                     }
                     Text("${gateway.sensorCount} sensores", color = Muted, fontSize = 11.sp)
                 }
+                Text(
+                    text     = "Próximo mantenimiento: ${gateway.nextMaintenanceDate ?: "sin programar"}",
+                    color    = Muted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
             Icon(
                 Icons.Default.Build,

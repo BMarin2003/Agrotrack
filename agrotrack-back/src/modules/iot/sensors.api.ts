@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { execProcedure } from "@core/db/connection";
 import { authPlugin } from "@core/auth.guard";
 import { PERMISSIONS } from "@core/permissions.constants";
+import { mqttService } from "@services/mqtt.service";
 
 const path = "/sensors";
 
@@ -92,11 +93,27 @@ export const SensorsApi = new Elysia().group(path, (app) =>
 
     .post(
       "/:id/calibration",
-      async ({ params, body, set }) => {
+      async ({ params, body, user, set }) => {
+        const sensorId = parseInt(params.id);
         const result = await execProcedure("iot.save_calibration", [
-          { sensor_id: parseInt(params.id), ...(body as any) },
+          { sensor_id: sensorId, user_id: (user as any).id, ...(body as any) },
         ]);
         if (result.error) { set.status = 400; return { message: result.error }; }
+
+        // Publicar el comando al gateway físico — best-effort. La calibración
+        // ya quedó guardada en BD aunque el publish falle o no exista
+        // firmware que lo escuche; ack_status se resuelve por timeout en la app.
+        const sensorResult = await execProcedure("iot.get_sensor", [{ id: sensorId, user_id: (user as any).id }]);
+        const sensor = sensorResult.result;
+        if (sensor?.gateway_identifier) {
+          mqttService.publishCalibrationCommand(sensor.gateway_identifier, {
+            requestId: result.result.request_id,
+            slave: sensor.identifier,
+            gain: (body as any).gain,
+            intercept: (body as any).intercept,
+          });
+        }
+
         return result.result;
       },
       {

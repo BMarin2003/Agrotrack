@@ -17,6 +17,7 @@ const ROLE_PERMISSIONS: Record<string, Set<string>> = {
     PERMISSIONS.iot.manage_thresholds,
     PERMISSIONS.iot.view_reports,
     PERMISSIONS.iot.manage_gateways,
+    PERMISSIONS.iot.manage_helpdesk,
   ]),
 
   Operador: new Set([
@@ -185,9 +186,9 @@ describe("Técnico — zona de trabajo", () => {
     expect(rbac.isAdmin(uid)).toBe(false);
   });
 
-  it("tiene exactamente 9 permisos asignados (todos los IoT)", () => {
+  it("tiene exactamente 10 permisos asignados (todos los IoT)", () => {
     const perms = ROLE_PERMISSIONS["Técnico"];
-    expect(perms.size).toBe(9);
+    expect(perms.size).toBe(10);
   });
 
   it("sus permisos son un superconjunto de los del Operador", () => {
@@ -453,10 +454,10 @@ describe("Jerarquía de roles — invariantes del sistema", () => {
     }
   });
 
-  it("el catálogo total tiene exactamente 11 permisos", () => {
+  it("el catálogo total tiene exactamente 12 permisos", () => {
     const total =
       Object.values(PERMISSIONS.iot).length +
       Object.values(PERMISSIONS.admin).length;
-    expect(total).toBe(11);
+    expect(total).toBe(12);
   });
 });

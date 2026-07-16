@@ -11,6 +11,7 @@ import { TelemetryApi } from '@modules/iot/telemetry.api';
 import { ThresholdsApi } from '@modules/iot/thresholds.api';
 import { AlertsApi } from '@modules/iot/alerts.api';
 import { ReportsApi } from '@modules/iot/reports.api';
+import { HelpdeskApi } from '@modules/iot/helpdesk.api';
 
 import { TelemetryWs } from '@modules/iot/telemetry.ws';
 
@@ -40,7 +41,8 @@ export const routerApi = new Elysia()
   .use(TelemetryApi)
   .use(ThresholdsApi)
   .use(AlertsApi)
-  .use(ReportsApi);
+  .use(ReportsApi)
+  .use(HelpdeskApi);
 
 export const routerWs = new Elysia({
   websocket: {
