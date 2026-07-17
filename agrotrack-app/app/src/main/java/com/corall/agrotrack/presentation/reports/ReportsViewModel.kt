@@ -151,6 +151,7 @@ class ReportsViewModel @Inject constructor(
         return when (state.downloadFormat) {
             DownloadFormat.CSV  -> ReportExportUtil.buildCsv(rows)
             DownloadFormat.JSON -> ReportExportUtil.buildJson(rows)
+            DownloadFormat.PDF  -> "" // el PDF se arma aparte (Task 9)
         }
     }
 }
