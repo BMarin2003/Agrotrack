@@ -1,6 +1,8 @@
 package com.corall.agrotrack.domain.repository
 
 import com.corall.agrotrack.domain.model.Alert
+import com.corall.agrotrack.domain.model.GatewayReport
+import com.corall.agrotrack.domain.model.GeneralReport
 import com.corall.agrotrack.domain.model.SensorReading
 import com.corall.agrotrack.domain.model.ThresholdConfig
 import kotlinx.coroutines.flow.Flow
@@ -19,4 +21,6 @@ interface TelemetryRepository {
     suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit>
     suspend fun getReportHistory(sensorId: Int, from: String?, to: String?): Result<List<SensorReading>>
     suspend fun getAlertHistory(gatewayId: Int, from: String? = null, to: String? = null): Result<List<Alert>>
+    suspend fun getGatewayReport(gatewayId: Int, from: String, to: String): Result<GatewayReport>
+    suspend fun getGeneralReport(from: String, to: String): Result<GeneralReport>
 }

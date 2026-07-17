@@ -8,9 +8,19 @@ import com.corall.agrotrack.data.mock.MockConfig
 import com.corall.agrotrack.data.mock.MockData
 import com.corall.agrotrack.data.remote.api.TelemetryApiService
 import com.corall.agrotrack.data.remote.dto.AlertDto
+import com.corall.agrotrack.data.remote.dto.GatewayReportDto
+import com.corall.agrotrack.data.remote.dto.GatewayReportSensorDto
+import com.corall.agrotrack.data.remote.dto.GeneralReportDto
+import com.corall.agrotrack.data.remote.dto.GeneralReportGatewayRowDto
 import com.corall.agrotrack.data.remote.dto.SensorReadingDto
 import com.corall.agrotrack.data.remote.dto.ThresholdUpsertDto
 import com.corall.agrotrack.domain.model.Alert
+import com.corall.agrotrack.domain.model.GatewayConnectivityMode
+import com.corall.agrotrack.domain.model.GatewayReport
+import com.corall.agrotrack.domain.model.GatewayReportSensor
+import com.corall.agrotrack.domain.model.GatewayStatus
+import com.corall.agrotrack.domain.model.GeneralReport
+import com.corall.agrotrack.domain.model.GeneralReportRow
 import com.corall.agrotrack.domain.model.SensorReading
 import com.corall.agrotrack.domain.model.SensorStatus
 import com.corall.agrotrack.domain.model.ThresholdConfig
@@ -147,6 +157,43 @@ class TelemetryRepositoryImpl @Inject constructor(
         response.body().orEmpty().map { it.toDomain() }
     }
 
+    override suspend fun getGatewayReport(gatewayId: Int, from: String, to: String): Result<GatewayReport> = runCatching {
+        val response = api.getGatewayReport(gatewayId, from, to)
+        if (!response.isSuccessful) error("No se pudo generar el reporte del gateway")
+        val dto = response.body() ?: error("Respuesta vacía del servidor")
+
+        GatewayReport(
+            gatewayId = dto.gateway.id,
+            gatewayName = dto.gateway.name,
+            gatewayLocation = dto.gateway.location.orEmpty(),
+            connectivityMode = GatewayConnectivityMode.from(dto.gateway.connectivityMode),
+            pendingSyncCount = dto.gateway.pendingSyncCount ?: 0,
+            gatewayBattery = dto.gateway.battery,
+            tempMin = dto.summary.tempMin,
+            tempMax = dto.summary.tempMax,
+            tempAvg = dto.summary.tempAvg,
+            sensorCount = dto.summary.sensorCount,
+            readingCount = dto.summary.readingCount,
+            alertsTotal = dto.alerts.total,
+            alertsResolved = dto.alerts.resolved,
+            alertsUnresolved = dto.alerts.unresolved,
+            sensors = dto.sensors.map { it.toDomain(gatewayId) },
+        )
+    }
+
+    override suspend fun getGeneralReport(from: String, to: String): Result<GeneralReport> = runCatching {
+        val response = api.getGeneralReport(from, to)
+        if (!response.isSuccessful) error("No se pudo generar el reporte general")
+        val dto = response.body() ?: error("Respuesta vacía del servidor")
+
+        GeneralReport(
+            gateways = dto.gateways.map { it.toDomain() },
+            totalGatewayCount = dto.totals.gatewayCount,
+            totalSensorCount = dto.totals.sensorCount,
+            totalAlertCount = dto.totals.alertCount,
+        )
+    }
+
     override suspend fun updateThresholdConfig(config: ThresholdConfig): Result<Unit> = runCatching {
         if (MockConfig.ENABLED) {
             MockData.saveThresholdConfig(config)
@@ -179,6 +226,50 @@ class TelemetryRepositoryImpl @Inject constructor(
             battery = battery,
             receivedAt = receivedAtMillis,
             status = statusFromReceivedAt(receivedAtMillis),
+        )
+    }
+
+    private fun GatewayReportSensorDto.toDomain(gatewayId: Int): GatewayReportSensor {
+        return GatewayReportSensor(
+            sensorId = id,
+            name = name,
+            unit = unit ?: "°C",
+            tempMin = tempMin,
+            tempMax = tempMax,
+            tempAvg = tempAvg,
+            readings = readings.map { r ->
+                val receivedAtMillis = r.receivedAt.toEpochMillisOrZero()
+                SensorReading(
+                    id = r.id,
+                    sensorId = id,
+                    gatewayId = gatewayId,
+                    sensorName = name,
+                    unit = unit ?: "°C",
+                    temperature = r.temperature,
+                    voltage = null,
+                    battery = null,
+                    receivedAt = receivedAtMillis,
+                    status = statusFromReceivedAt(receivedAtMillis),
+                )
+            },
+        )
+    }
+
+    private fun GeneralReportGatewayRowDto.toDomain(): GeneralReportRow {
+        return GeneralReportRow(
+            gatewayId = id,
+            name = name,
+            location = location.orEmpty(),
+            status = GatewayStatus.from(status, enable = true),
+            connectivityMode = GatewayConnectivityMode.from(connectivityMode),
+            pendingSyncCount = pendingSyncCount ?: 0,
+            battery = battery,
+            sensorCount = sensorCount,
+            tempMin = tempMin,
+            tempMax = tempMax,
+            tempAvg = tempAvg,
+            alertsTotal = alertsTotal,
+            alertsUnresolved = alertsUnresolved,
         )
     }
 

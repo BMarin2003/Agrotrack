@@ -1,6 +1,8 @@
 package com.corall.agrotrack.data.remote.api
 
 import com.corall.agrotrack.data.remote.dto.AlertDto
+import com.corall.agrotrack.data.remote.dto.GatewayReportDto
+import com.corall.agrotrack.data.remote.dto.GeneralReportDto
 import com.corall.agrotrack.data.remote.dto.SensorReadingDto
 import com.corall.agrotrack.data.remote.dto.ThresholdItemDto
 import com.corall.agrotrack.data.remote.dto.ThresholdUpsertDto
@@ -63,4 +65,17 @@ interface TelemetryApiService {
         @Query("from") from: String? = null,
         @Query("to")   to:   String? = null,
     ): Response<List<AlertDto>>
+
+    @GET("reports/gateway/{gatewayId}")
+    suspend fun getGatewayReport(
+        @Path("gatewayId") gatewayId: Int,
+        @Query("from") from: String,
+        @Query("to")   to:   String,
+    ): Response<GatewayReportDto>
+
+    @GET("reports/general")
+    suspend fun getGeneralReport(
+        @Query("from") from: String,
+        @Query("to")   to:   String,
+    ): Response<GeneralReportDto>
 }
