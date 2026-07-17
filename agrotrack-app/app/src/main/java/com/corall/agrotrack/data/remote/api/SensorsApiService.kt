@@ -6,6 +6,7 @@ import com.corall.agrotrack.data.remote.dto.CalibrationSaveDto
 import com.corall.agrotrack.data.remote.dto.GatewayDto
 import com.corall.agrotrack.data.remote.dto.MaintenanceRecordDto
 import com.corall.agrotrack.data.remote.dto.MaintenanceSaveDto
+import com.corall.agrotrack.data.remote.dto.MqttTopicSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorAliasDto
 import com.corall.agrotrack.data.remote.dto.SensorAliasSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorDto
@@ -53,6 +54,12 @@ interface SensorsApiService {
 
     @PUT("sensors/gateways/pin")
     suspend fun setGatewayPin(@Body body: PinConfigDto): Response<Unit>
+
+    @PUT("sensors/gateways/{id}/mqtt-topic")
+    suspend fun updateGatewayMqttTopic(
+        @Path("id") gatewayId: Int,
+        @Body body: MqttTopicSaveDto,
+    ): Response<Unit>
 
     @GET("sensors/gateways/{id}/maintenance")
     suspend fun listMaintenance(@Path("id") gatewayId: Int): Response<List<MaintenanceRecordDto>>

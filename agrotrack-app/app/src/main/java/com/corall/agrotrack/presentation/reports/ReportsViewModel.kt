@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.domain.model.Sensor
+import com.corall.agrotrack.domain.model.SensorReading
 import com.corall.agrotrack.domain.repository.TelemetryRepository
+import com.google.gson.GsonBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -13,7 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.time.Instant
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -106,5 +111,75 @@ class ReportsViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoadingReport = false, error = e.message) }
             }
         }
+    }
+
+    fun selectDownloadFormat(format: DownloadFormat) = _uiState.update { it.copy(downloadFormat = format, downloadError = null) }
+    fun onDownloadError(message: String?) = _uiState.update { it.copy(downloadError = message) }
+
+    /** Sensor + sus lecturas, en el orden mostrado — insumo para el PDF. */
+    fun exportSensorRows(): List<Pair<Sensor, List<SensorReading>>> {
+        val state = _uiState.value
+        return state.selectedSensors.toList().map { it to state.reports[it.id].orEmpty() }
+    }
+
+    fun periodLabel(): String {
+        val state = _uiState.value
+        return if (state.isCustomRange) {
+            val fmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            "${fmt.format(Date(state.customFrom!!))} — ${fmt.format(Date(state.customTo!!))}"
+        } else when (state.range) {
+            "7d"  -> "Últimos 7 días"
+            "30d" -> "Últimos 30 días"
+            else  -> "Últimas 24 horas"
+        }
+    }
+
+    /**
+     * Arma el contenido a exportar a partir de lo que YA está en memoria
+     * (`reports`, cargado por loadReport()) — no hace ninguna llamada de
+     * red. Por eso HU18 ("reintentar si pierde conexión") queda resuelto
+     * de raíz: no hay conexión que perder al exportar, siempre se puede
+     * volver a tocar "Descargar" al instante.
+     */
+    fun buildExportContent(): String {
+        val state = _uiState.value
+        val sensorNames = state.selectedSensors.associate { it.id to it.name }
+        val rows = state.reports.entries
+            .sortedBy { it.key }
+            .flatMap { (sensorId, readings) -> readings.map { sensorNames[sensorId].orEmpty() to it } }
+            .sortedBy { it.second.receivedAt }
+
+        return when (state.downloadFormat) {
+            DownloadFormat.CSV  -> buildCsv(rows)
+            DownloadFormat.JSON -> buildJson(rows)
+        }
+    }
+
+    private fun buildCsv(rows: List<Pair<String, SensorReading>>): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val sb = StringBuilder("sensor,fecha,temperatura_c\n")
+        for ((sensorName, reading) in rows) {
+            val fecha = dateFormat.format(Date(reading.receivedAt))
+            val temp  = reading.temperature?.toString().orEmpty()
+            sb.append(csvEscape(sensorName)).append(',').append(fecha).append(',').append(temp).append('\n')
+        }
+        return sb.toString()
+    }
+
+    private fun csvEscape(value: String): String =
+        if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+            "\"${value.replace("\"", "\"\"")}\""
+        } else value
+
+    private fun buildJson(rows: List<Pair<String, SensorReading>>): String {
+        val exportGson = GsonBuilder().setPrettyPrinting().create()
+        val list = rows.map { (sensorName, reading) ->
+            mapOf(
+                "sensor" to sensorName,
+                "received_at" to reading.receivedAt,
+                "temperature_c" to reading.temperature,
+            )
+        }
+        return exportGson.toJson(list)
     }
 }

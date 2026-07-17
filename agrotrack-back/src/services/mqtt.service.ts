@@ -5,7 +5,7 @@ import { rulesEngine } from '@services/rules.engine';
 import { watchdogService } from '@services/watchdog.service';
 import { broadcastToGateway } from '@modules/iot/telemetry.ws';
 
-interface TwarmPayload {
+export interface TwarmPayload {
   GatewayID: number;
   Slave: string;
   Tipo: string;
@@ -17,6 +17,12 @@ interface TwarmPayload {
   Bg: number;
   ConnMode?: string;
   PendingSync?: number;
+  /** Voltaje real del sensor (V) — NO existe en el protocolo Twarm real
+   *  confirmado hasta ahora (solo Bs/Bg = batería %). Campo opcional que
+   *  únicamente rellena la flota simulada; el ingest de MQTT real nunca lo
+   *  recibe, así que un gateway físico real seguirá guardando NULL como
+   *  siempre hasta que el firmware confirme un campo equivalente. */
+  V?: number;
 }
 
 class MqttService {
@@ -104,7 +110,10 @@ class MqttService {
     return newId;
   }
 
-  private async resolveGateway(identifier: string): Promise<{ id: number; name: string } | null> {
+  async resolveGateway(
+    identifier: string,
+    hints?: { name?: string; location?: string },
+  ): Promise<{ id: number; name: string } | null> {
     if (this.gatewayCache.has(identifier)) {
       return this.gatewayCache.get(identifier)!;
     }
@@ -117,10 +126,13 @@ class MqttService {
 
     // El gateway físico ya existe y está transmitiendo — igual que con los
     // sensores (resolveSensorId), no tiene sentido bloquear su telemetría
-    // esperando que alguien lo dé de alta a mano en la app/API.
+    // esperando que alguien lo dé de alta a mano en la app/API. Si el
+    // llamador conoce un nombre/ubicación real (ej. la flota simulada),
+    // se usa; si no (MQTT real sin ese contexto), cae al nombre genérico.
     const created = await execProcedure('iot.save_gateway', [{
-      name: `Gateway ${identifier}`,
+      name: hints?.name ?? `Gateway ${identifier}`,
       identifier,
+      location: hints?.location,
     }]);
 
     if (created.error || !created.result?.id) {
@@ -128,7 +140,7 @@ class MqttService {
       return null;
     }
 
-    const gateway = { id: created.result.id, name: `Gateway ${identifier}` };
+    const gateway = { id: created.result.id, name: hints?.name ?? `Gateway ${identifier}` };
     console.log(`[MQTT] Gateway auto-creado: ${identifier} → id=${gateway.id}`);
     this.gatewayCache.set(identifier, gateway);
     return gateway;
@@ -136,7 +148,7 @@ class MqttService {
 
   private async handleMessage(topic: string, rawMessage: Buffer) {
     try {
-      const { topicSubscribe, gatewayUid, topicPrefix } = configServer.mqtt;
+      const { topicSubscribe, gatewayUid } = configServer.mqtt;
 
       // TEMPORAL — quitar una vez confirmado qué claves manda el gateway real
       // (voltaje, ConnMode, PendingSync). Loguea el JSON tal cual llega, sin
@@ -156,13 +168,31 @@ class MqttService {
         gatewayIdentifier = topic.split('/')[2];
       }
 
+      await this.ingestPayload(gatewayIdentifier, payload);
+    } catch (error) {
+      console.error('[MQTT] Error procesando mensaje:', error);
+    }
+  }
+
+  /**
+   * Lógica de ingesta compartida por MQTT real y por MockFleetService — así
+   * el mock ejercita EXACTAMENTE el mismo camino (auto-registro, guardado en
+   * BD, RulesEngine, WatchdogService, broadcast WS) que un gateway físico,
+   * en vez de simular la app por otro lado.
+   */
+  async ingestPayload(
+    gatewayIdentifier: string,
+    payload: TwarmPayload,
+    gatewayHints?: { name?: string; location?: string },
+  ) {
+    try {
       // Diagnóstico: registrar Slaves únicos vistos
       if (!this.uniqueSlaves.has(payload.Slave)) {
         this.uniqueSlaves.add(payload.Slave);
-        console.log(`[MQTT] Slave nuevo: ${payload.Slave} (total únicos: ${this.uniqueSlaves.size}) → [${[...this.uniqueSlaves].join(', ')}]`);
+        console.log(`[MQTT] Slave nuevo: ${payload.Slave} (total únicos: ${this.uniqueSlaves.size})`);
       }
 
-      const gateway = await this.resolveGateway(gatewayIdentifier);
+      const gateway = await this.resolveGateway(gatewayIdentifier, gatewayHints);
       if (!gateway) return;
 
       if (payload.ConnMode || typeof payload.PendingSync === 'number' || typeof payload.Bg === 'number') {
@@ -181,7 +211,7 @@ class MqttService {
         sensor_id: sensorId,
         gateway_id: gateway.id,
         temperature: payload.T ?? null,
-        voltage: null,
+        voltage: payload.V ?? null,
         battery: payload.Bs ?? null,
         extra_data: {
           rssi: payload.RSSI,
@@ -209,9 +239,8 @@ class MqttService {
       watchdogService.heartbeat(sensorId, gateway.id);
       await rulesEngine.evaluate(reading);
       broadcastToGateway(gateway.id, { type: 'reading', data: reading });
-
     } catch (error) {
-      console.error('[MQTT] Error procesando mensaje:', error);
+      console.error('[MQTT] Error en ingestPayload:', error);
     }
   }
 

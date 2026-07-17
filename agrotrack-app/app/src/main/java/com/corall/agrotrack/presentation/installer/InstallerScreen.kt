@@ -52,7 +52,7 @@ fun InstallerScreen(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text     = "Configura la red WiFi y el PIN de acceso del gateway.",
+                text     = "Configura la red WiFi, el PIN de acceso y el tópico MQTT del gateway.",
                 color    = Muted,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
@@ -213,11 +213,55 @@ fun InstallerScreen(
             Button(
                 onClick  = viewModel::submitPin,
                 enabled  = !uiState.isPinSaving && uiState.pin.length == 4,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
             ) {
                 if (uiState.isPinSaving) CircularProgressIndicator(Modifier.size(18.dp), color = Color(0xFF0D1B2A), strokeWidth = 2.dp)
                 else Text("Guardar PIN", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
+            }
+
+            // ── Tópico MQTT ──────────────────────────────────────────
+            HorizontalDivider(color = Muted.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 20.dp))
+
+            Text("Tópico MQTT", color = White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                text     = "Define a qué tópico publica este gateway. Sin aprovisionamiento físico todavía, la confirmación puede tardar o no llegar en un gateway real.",
+                color    = Muted,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
+            )
+
+            OutlinedTextField(
+                value         = uiState.mqttTopic,
+                onValueChange = viewModel::onMqttTopicChange,
+                label         = { Text("Tópico (ej: twarm/prueba)") },
+                singleLine    = true,
+                colors        = fieldColors,
+                modifier      = Modifier.fillMaxWidth(),
+            )
+
+            uiState.mqttError?.let { Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+            when (uiState.mqttState) {
+                MqttTopicState.PENDING -> Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+                    CircularProgressIndicator(Modifier.size(14.dp), color = Cyan, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Esperando confirmación del gateway…", color = Muted, fontSize = 12.sp)
+                }
+                MqttTopicState.APPLIED -> Text("✅ Tópico aplicado en el gateway", color = Green, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                MqttTopicState.ERROR   -> {} // el mensaje ya sale arriba vía mqttError
+                MqttTopicState.NONE    -> {}
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick  = viewModel::submitMqttTopic,
+                enabled  = !uiState.isMqttSaving && uiState.mqttState != MqttTopicState.PENDING && uiState.mqttTopic.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
+            ) {
+                if (uiState.isMqttSaving) CircularProgressIndicator(Modifier.size(18.dp), color = Color(0xFF0D1B2A), strokeWidth = 2.dp)
+                else Text("Guardar tópico MQTT", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
             }
         }
     }

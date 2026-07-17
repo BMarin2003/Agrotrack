@@ -96,4 +96,51 @@ class InstallerViewModel @Inject constructor(
                 .onFailure { e -> _uiState.update { it.copy(isPinSaving = false, pinError = e.message) } }
         }
     }
+
+    fun onMqttTopicChange(v: String) = _uiState.update { it.copy(mqttTopic = v, mqttState = MqttTopicState.NONE, mqttError = null) }
+
+    fun submitMqttTopic() {
+        val s = _uiState.value
+        val gatewayId = s.selectedGatewayId ?: run { _uiState.update { it.copy(mqttError = "Selecciona un gateway") }; return }
+        if (s.mqttTopic.isBlank()) { _uiState.update { it.copy(mqttError = "El tópico no puede estar vacío") }; return }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isMqttSaving = true, mqttError = null, mqttState = MqttTopicState.NONE) }
+            gatewayRepo.updateGatewayMqttTopic(gatewayId, s.mqttTopic.trim())
+                .onSuccess {
+                    _uiState.update { it.copy(isMqttSaving = false, mqttState = MqttTopicState.PENDING) }
+                    awaitMqttTopicAck(gatewayId)
+                }
+                .onFailure { e -> _uiState.update { it.copy(isMqttSaving = false, mqttError = e.message) } }
+        }
+    }
+
+    /**
+     * No hay canal real de aprovisionamiento a un gateway físico (ver
+     * migración 011) — se pollea el estado igual que la calibración
+     * (HU32-35): la flota simulada confirma sola en unos segundos, un
+     * gateway real se queda "pendiente" hasta que exista ese mecanismo.
+     */
+    private fun awaitMqttTopicAck(gatewayId: Int) {
+        viewModelScope.launch {
+            repeat(6) {
+                delay(3_000)
+                val gateway = gatewayRepo.getGatewayById(gatewayId).getOrNull()
+                when (gateway?.mqttTopicStatus) {
+                    "applied" -> {
+                        _uiState.update { it.copy(mqttState = MqttTopicState.APPLIED) }
+                        return@launch
+                    }
+                    "error" -> {
+                        _uiState.update { it.copy(mqttState = MqttTopicState.ERROR, mqttError = "El gateway rechazó el nuevo tópico") }
+                        return@launch
+                    }
+                    else -> { /* pending, seguir esperando */ }
+                }
+            }
+            _uiState.update { it.copy(
+                mqttState = MqttTopicState.ERROR,
+                mqttError = "Sin confirmación del gateway — verifica que esté encendido y en rango",
+            ) }
+        }
+    }
 }

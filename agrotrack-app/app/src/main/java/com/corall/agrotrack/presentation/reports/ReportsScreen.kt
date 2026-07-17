@@ -1,8 +1,12 @@
 package com.corall.agrotrack.presentation.reports
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,6 +15,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +49,29 @@ fun ReportsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // SAF (Storage Access Framework) — el usuario elige dónde guardar, sin
+    // pedir permisos de almacenamiento. El contenido se arma en el momento
+    // desde datos que ya están en memoria (loadReport() ya los trajo), así
+    // que no hay red de por medio y nunca hay nada que "reintentar" (HU18).
+    val saveFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { out ->
+                if (uiState.downloadFormat == DownloadFormat.PDF) {
+                    val doc = ReportPdfBuilder.build(viewModel.periodLabel(), viewModel.exportSensorRows())
+                    doc.writeTo(out)
+                    doc.close()
+                } else {
+                    out.write(viewModel.buildExportContent().toByteArray())
+                }
+            } ?: error("No se pudo abrir el archivo destino")
+        }.onFailure { e -> viewModel.onDownloadError(e.message ?: "No se pudo guardar el archivo") }
+            .onSuccess { viewModel.onDownloadError(null) }
+    }
 
     if (showDatePicker) {
         CustomRangeDialog(
@@ -159,6 +187,17 @@ fun ReportsScreen(
                 return@Column
             }
 
+            DownloadSection(
+                format   = uiState.downloadFormat,
+                error    = uiState.downloadError,
+                onFormat = viewModel::selectDownloadFormat,
+                onDownload = {
+                    val fileName = "reporte_agrotrack_${System.currentTimeMillis()}.${uiState.downloadFormat.extension}"
+                    saveFileLauncher.launch(fileName)
+                },
+            )
+            Spacer(Modifier.height(16.dp))
+
             if (reports.size == 1) {
                 val readings = reports.values.first()
                 SummaryCard(readings)
@@ -254,6 +293,48 @@ private fun SensorMultiSelect(
                     // No cerramos el menú: el usuario puede tildar varios sensores seguidos.
                     onClick = { onToggle(sensor) },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadSection(
+    format:     DownloadFormat,
+    error:      String?,
+    onFormat:   (DownloadFormat) -> Unit,
+    onDownload: () -> Unit,
+) {
+    Surface(color = CardBg, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text("Descargar reporte", color = White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DownloadFormat.entries.forEach { f ->
+                    FilterChip(
+                        selected = format == f,
+                        onClick  = { onFormat(f) },
+                        label    = { Text(f.label) },
+                        colors   = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Cyan,
+                            selectedLabelColor     = Color(0xFF0D1B2A),
+                        ),
+                    )
+                }
+            }
+            error?.let {
+                Spacer(Modifier.height(6.dp))
+                Text(it, color = Red, fontSize = 12.sp)
+            }
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick  = onDownload,
+                modifier = Modifier.fillMaxWidth(),
+                colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
+            ) {
+                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF0D1B2A))
+                Spacer(Modifier.width(6.dp))
+                Text("Descargar (${format.label})", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
             }
         }
     }

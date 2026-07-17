@@ -15,4 +15,10 @@ data class GatewayDto(
     @SerializedName("connectivity_mode") val connectivityMode: String? = null,
     @SerializedName("pending_sync_count") val pendingSyncCount: Int? = null,
     @SerializedName("next_maintenance") val nextMaintenance: String? = null,
+    @SerializedName("mqtt_topic") val mqttTopic: String? = null,
+    @SerializedName("mqtt_topic_status") val mqttTopicStatus: String? = null,
+)
+
+data class MqttTopicSaveDto(
+    @SerializedName("topic") val topic: String,
 )

@@ -3,6 +3,7 @@ import { execProcedure } from "@core/db/connection";
 import { authPlugin } from "@core/auth.guard";
 import { PERMISSIONS } from "@core/permissions.constants";
 import { mqttService } from "@services/mqtt.service";
+import { mockFleetService } from "@services/mock-fleet.service";
 
 const path = "/sensors";
 
@@ -106,12 +107,19 @@ export const SensorsApi = new Elysia().group(path, (app) =>
         const sensorResult = await execProcedure("iot.get_sensor", [{ id: sensorId, user_id: (user as any).id }]);
         const sensor = sensorResult.result;
         if (sensor?.gateway_identifier) {
-          mqttService.publishCalibrationCommand(sensor.gateway_identifier, {
-            requestId: result.result.request_id,
-            slave: sensor.identifier,
-            gain: (body as any).gain,
-            intercept: (body as any).intercept,
-          });
+          if (mockFleetService.isMockIdentifier(sensor.gateway_identifier)) {
+            // Gateway de la flota simulada: nada de MQTT real (no tiene
+            // sentido publicar al broker compartido para un dispositivo que
+            // no existe) — el "device" confirma solo, en unos segundos.
+            mockFleetService.simulateCalibrationAck(result.result.request_id);
+          } else {
+            mqttService.publishCalibrationCommand(sensor.gateway_identifier, {
+              requestId: result.result.request_id,
+              slave: sensor.identifier,
+              gain: (body as any).gain,
+              intercept: (body as any).intercept,
+            });
+          }
         }
 
         return result.result;
@@ -294,6 +302,31 @@ export const SensorsApi = new Elysia().group(path, (app) =>
           security: t.Optional(
             t.Union([t.Literal("WPA2"), t.Literal("WPA3"), t.Literal("open")]),
           ),
+        }),
+      },
+    )
+
+    .put(
+      "/gateways/:id/mqtt-topic",
+      async ({ params, body, set }) => {
+        const result = await execProcedure("iot.update_gateway_mqtt_topic", [
+          { id: parseInt(params.id), topic: (body as any).topic },
+        ]);
+        if (result.error) { set.status = 400; return { message: result.error }; }
+
+        const { request_id, identifier } = result.result as { request_id: string; identifier: string };
+        if (identifier && mockFleetService.isMockIdentifier(identifier)) {
+          mockFleetService.simulateMqttTopicAck(request_id);
+        }
+        // Gateway real: sin canal de aprovisionamiento todavía (igual que
+        // WiFi/PIN) — queda 'pending' hasta que exista un mecanismo real.
+
+        return result.result;
+      },
+      {
+        requirePermission: PERMISSIONS.iot.manage_gateways,
+        body: t.Object({
+          topic: t.String({ minLength: 1, maxLength: 200 }),
         }),
       },
     ),

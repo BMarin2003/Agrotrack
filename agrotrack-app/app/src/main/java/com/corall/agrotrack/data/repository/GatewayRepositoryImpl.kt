@@ -4,6 +4,7 @@ import com.corall.agrotrack.data.mock.MockConfig
 import com.corall.agrotrack.data.mock.MockData
 import com.corall.agrotrack.data.remote.api.SensorsApiService
 import com.corall.agrotrack.data.remote.dto.GatewayDto
+import com.corall.agrotrack.data.remote.dto.MqttTopicSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorAliasSaveDto
 import com.corall.agrotrack.data.remote.dto.SensorDto
 import com.corall.agrotrack.data.remote.dto.PinConfigDto
@@ -78,6 +79,13 @@ class GatewayRepositoryImpl @Inject constructor(
         if (!response.isSuccessful) error(errorMessageOrDefault(response, "No se pudo actualizar el PIN"))
     }
 
+    override suspend fun updateGatewayMqttTopic(gatewayId: Int, topic: String): Result<Unit> = runCatching {
+        if (MockConfig.ENABLED) return@runCatching
+
+        val response = api.updateGatewayMqttTopic(gatewayId, MqttTopicSaveDto(topic))
+        if (!response.isSuccessful) error(errorMessageOrDefault(response, "No se pudo actualizar el tópico MQTT"))
+    }
+
     override suspend fun getSensorAlias(sensorId: Int): Result<String?> = runCatching {
         if (MockConfig.ENABLED) return@runCatching null
 
@@ -109,6 +117,8 @@ class GatewayRepositoryImpl @Inject constructor(
             connectivityMode = GatewayConnectivityMode.from(connectivityMode),
             pendingSyncCount = pendingSyncCount ?: 0,
             nextMaintenanceDate = nextMaintenance,
+            mqttTopic = mqttTopic,
+            mqttTopicStatus = mqttTopicStatus,
         )
     }
 

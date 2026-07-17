@@ -12,4 +12,5 @@ interface GatewayRepository {
     suspend fun updateGatewayPin(gatewayIds: List<Int>, pin: String): Result<Unit>
     suspend fun getSensorAlias(sensorId: Int): Result<String?>
     suspend fun saveSensorAlias(sensorId: Int, alias: String): Result<Unit>
+    suspend fun updateGatewayMqttTopic(gatewayId: Int, topic: String): Result<Unit>
 }

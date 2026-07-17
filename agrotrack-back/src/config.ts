@@ -45,6 +45,15 @@ export const configServer = {
     sensorCount: parseInt(process.env.MOCK_SENSOR_COUNT || '6'),
     intervalMs: parseInt(process.env.MOCK_INTERVAL_MS || '5000'),
   },
+  // Flota simulada de gateways/sensores que corre EN PARALELO al backend
+  // (independiente de MQTT_ENABLED) — pasa por el mismo ingestPayload() que
+  // usaría un gateway físico real, así que queda guardada en BD de verdad.
+  mockFleet: {
+    enabled: process.env.MOCK_FLEET_ENABLED === 'true',
+    gatewayCount: parseInt(process.env.MOCK_FLEET_GATEWAYS || '12'),
+    sensorsPerGateway: parseInt(process.env.MOCK_FLEET_SENSORS_PER_GATEWAY || '15'),
+    intervalMs: parseInt(process.env.MOCK_FLEET_INTERVAL_MS || '15000'),
+  },
 };
 
 setTimeZone(configServer.timeZone);
