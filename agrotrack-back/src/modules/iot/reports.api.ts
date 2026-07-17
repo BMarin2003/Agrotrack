@@ -60,4 +60,36 @@ export const ReportsApi = new Elysia()
         to: t.Optional(t.String()),
       }),
     })
+
+    .get('/gateway/:id', async ({ params, query, user, set }) => {
+      const result = await execProcedure('iot.get_gateway_report', [{
+        gateway_id: parseInt(params.id),
+        from_ts: query.from || null,
+        to_ts: query.to || null,
+        user_id: (user as any).id,
+      }]);
+      if (result.error) { set.status = 500; return { message: result.error }; }
+      return result.result;
+    }, {
+      requirePermission: PERMISSIONS.iot.view_reports,
+      query: t.Object({
+        from: t.Optional(t.String()),
+        to: t.Optional(t.String()),
+      }),
+    })
+
+    .get('/general', async ({ query, set }) => {
+      const result = await execProcedure('iot.get_general_report', [{
+        from_ts: query.from || null,
+        to_ts: query.to || null,
+      }]);
+      if (result.error) { set.status = 500; return { message: result.error }; }
+      return result.result;
+    }, {
+      requirePermission: PERMISSIONS.iot.view_reports,
+      query: t.Object({
+        from: t.Optional(t.String()),
+        to: t.Optional(t.String()),
+      }),
+    })
   );
