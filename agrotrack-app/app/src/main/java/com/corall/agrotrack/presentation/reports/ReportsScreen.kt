@@ -43,10 +43,7 @@ private val RANGES = listOf("24h", "7d", "30d")
 // con un toque, gráfico historial, resumen estadístico
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportsScreen(
-    onBack:    () -> Unit,
-    viewModel: ReportsViewModel = hiltViewModel(),
-) {
+private fun SensorReportTab(viewModel: ReportsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -83,161 +80,182 @@ fun ReportsScreen(
         )
     }
 
-    AgroGradient {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-        ) {
-            AgroHeader(onBack = onBack)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+    ) {
+        if (uiState.isLoadingSensors) { LoadingState(); return@Column }
 
-            Text(
-                text       = "Historial de Temperaturas",
-                color      = White,
-                fontSize   = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text     = "Selecciona uno o más sensores y el período a analizar.",
-                color    = Muted,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
-            )
-
-            if (uiState.isLoadingSensors) { LoadingState(); return@Column }
-
-            if (uiState.sensors.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No hay sensores disponibles", color = Muted)
-                }
-                return@Column
+        if (uiState.sensors.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No hay sensores disponibles", color = Muted)
             }
+            return@Column
+        }
 
-            SensorMultiSelect(
-                sensors  = uiState.sensors,
-                selected = uiState.selectedSensors,
-                onToggle = viewModel::toggleSensor,
-            )
+        SensorMultiSelect(
+            sensors  = uiState.sensors,
+            selected = uiState.selectedSensors,
+            onToggle = viewModel::toggleSensor,
+        )
 
-            Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RANGES.forEach { range ->
-                    val active = !uiState.isCustomRange && uiState.range == range
-                    FilterChip(
-                        selected = active,
-                        onClick  = { viewModel.selectRange(range) },
-                        label    = { Text(range) },
-                        colors   = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Cyan,
-                            selectedLabelColor     = Color(0xFF0D1B2A),
-                        ),
-                    )
-                }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RANGES.forEach { range ->
+                val active = !uiState.isCustomRange && uiState.range == range
                 FilterChip(
-                    selected = uiState.isCustomRange,
-                    onClick  = { showDatePicker = true },
-                    label    = { Text("Personalizado") },
+                    selected = active,
+                    onClick  = { viewModel.selectRange(range) },
+                    label    = { Text(range) },
                     colors   = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Cyan,
                         selectedLabelColor     = Color(0xFF0D1B2A),
                     ),
                 )
             }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick  = viewModel::loadReport,
-                enabled  = uiState.selectedSensors.isNotEmpty() && !uiState.isLoadingReport,
-                modifier = Modifier.fillMaxWidth(),
-                colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
-            ) {
-                if (uiState.isLoadingReport) {
-                    CircularProgressIndicator(color = Color(0xFF0D1B2A), strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                } else {
-                    Text("Generar reporte", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            if (!uiState.hasGenerated) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Configura los filtros y genera el reporte", color = Muted, fontSize = 14.sp)
-                }
-                return@Column
-            }
-
-            if (uiState.isLoadingReport) {
-                LoadingState()
-                return@Column
-            }
-
-            uiState.error?.let { err ->
-                Text(err, color = Red, fontSize = 13.sp)
-                Spacer(Modifier.height(8.dp))
-            }
-
-            val reports = uiState.reports
-            if (reports.values.all { it.isEmpty() }) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Sin datos para el período seleccionado", color = Muted, fontSize = 14.sp)
-                }
-                return@Column
-            }
-
-            DownloadSection(
-                format   = uiState.downloadFormat,
-                error    = uiState.downloadError,
-                onFormat = viewModel::selectDownloadFormat,
-                onDownload = {
-                    val fileName = "reporte_agrotrack_${System.currentTimeMillis()}.${uiState.downloadFormat.extension}"
-                    saveFileLauncher.launch(fileName)
-                },
+            FilterChip(
+                selected = uiState.isCustomRange,
+                onClick  = { showDatePicker = true },
+                label    = { Text("Personalizado") },
+                colors   = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Cyan,
+                    selectedLabelColor     = Color(0xFF0D1B2A),
+                ),
             )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Button(
+            onClick  = viewModel::loadReport,
+            enabled  = uiState.selectedSensors.isNotEmpty() && !uiState.isLoadingReport,
+            modifier = Modifier.fillMaxWidth(),
+            colors   = ButtonDefaults.buttonColors(containerColor = Cyan),
+        ) {
+            if (uiState.isLoadingReport) {
+                CircularProgressIndicator(color = Color(0xFF0D1B2A), strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+            } else {
+                Text("Generar reporte", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        if (!uiState.hasGenerated) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Configura los filtros y genera el reporte", color = Muted, fontSize = 14.sp)
+            }
+            return@Column
+        }
+
+        if (uiState.isLoadingReport) {
+            LoadingState()
+            return@Column
+        }
+
+        uiState.error?.let { err ->
+            Text(err, color = Red, fontSize = 13.sp)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        val reports = uiState.reports
+        if (reports.values.all { it.isEmpty() }) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Sin datos para el período seleccionado", color = Muted, fontSize = 14.sp)
+            }
+            return@Column
+        }
+
+        DownloadSection(
+            format   = uiState.downloadFormat,
+            error    = uiState.downloadError,
+            onFormat = viewModel::selectDownloadFormat,
+            onDownload = {
+                val fileName = "reporte_agrotrack_${System.currentTimeMillis()}.${uiState.downloadFormat.extension}"
+                saveFileLauncher.launch(fileName)
+            },
+        )
+        Spacer(Modifier.height(16.dp))
+
+        if (reports.size == 1) {
+            val readings = reports.values.first()
+            SummaryCard(readings)
+            Spacer(Modifier.height(12.dp))
+            SparklineChart(readings)
             Spacer(Modifier.height(16.dp))
 
-            if (reports.size == 1) {
-                val readings = reports.values.first()
-                SummaryCard(readings)
-                Spacer(Modifier.height(12.dp))
-                SparklineChart(readings)
-                Spacer(Modifier.height(16.dp))
+            Text("Lecturas", color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
 
-                Text("Lecturas", color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-
-                LazyColumn(
-                    modifier            = Modifier.fillMaxSize(),
-                    contentPadding      = PaddingValues(bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    items(readings.asReversed(), key = { it.id }) { reading ->
-                        ReadingRow(reading)
-                    }
+            LazyColumn(
+                modifier            = Modifier.fillMaxSize(),
+                contentPadding      = PaddingValues(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                items(readings.asReversed(), key = { it.id }) { reading ->
+                    ReadingRow(reading)
                 }
-            } else {
-                LazyColumn(
-                    modifier            = Modifier.fillMaxSize(),
-                    contentPadding      = PaddingValues(bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    items(uiState.selectedSensors.toList(), key = { it.id }) { sensor ->
-                        val readings = reports[sensor.id].orEmpty()
-                        Column {
-                            Text(sensor.name, color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+        } else {
+            LazyColumn(
+                modifier            = Modifier.fillMaxSize(),
+                contentPadding      = PaddingValues(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                items(uiState.selectedSensors.toList(), key = { it.id }) { sensor ->
+                    val readings = reports[sensor.id].orEmpty()
+                    Column {
+                        Text(sensor.name, color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        if (readings.isEmpty()) {
+                            Text("Sin datos en el período", color = Muted, fontSize = 12.sp)
+                        } else {
+                            SummaryCard(readings)
                             Spacer(Modifier.height(8.dp))
-                            if (readings.isEmpty()) {
-                                Text("Sin datos en el período", color = Muted, fontSize = 12.sp)
-                            } else {
-                                SummaryCard(readings)
-                                Spacer(Modifier.height(8.dp))
-                                SparklineChart(readings)
-                            }
+                            SparklineChart(readings)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+private val TABS = listOf("Sensor", "Gateway", "General")
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportsScreen(onBack: () -> Unit) {
+    var selectedTab by remember { mutableStateOf(0) }
+
+    AgroGradient {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                AgroHeader(onBack = onBack)
+                Text("Historial de Temperaturas", color = White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text     = "Sensor individual, resumen por gateway, o vista general de toda la flota.",
+                    color    = Muted, fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                )
+            }
+
+            TabRow(selectedTabIndex = selectedTab, containerColor = Color.Transparent, contentColor = Cyan) {
+                TABS.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick  = { selectedTab = index },
+                        text     = { Text(title) },
+                    )
+                }
+            }
+
+            when (selectedTab) {
+                0 -> SensorReportTab()
+                1 -> GatewayReportScreen()
+                2 -> GeneralReportScreen()
             }
         }
     }
