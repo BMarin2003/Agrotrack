@@ -74,7 +74,7 @@ fun ReportsScreen(
     }
 
     if (showDatePicker) {
-        CustomRangeDialog(
+        DateTimeRangeDialog(
             onDismiss = { showDatePicker = false },
             onConfirm = { from, to ->
                 viewModel.setCustomRange(from, to)
@@ -337,32 +337,6 @@ private fun DownloadSection(
                 Text("Descargar (${format.label})", color = Color(0xFF0D1B2A), fontWeight = FontWeight.SemiBold)
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CustomRangeDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (fromMs: Long, toMs: Long) -> Unit,
-) {
-    val state = rememberDateRangePickerState()
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val from = state.selectedStartDateMillis
-                    val to   = state.selectedEndDateMillis
-                    if (from != null && to != null) onConfirm(from, to)
-                },
-                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
-            ) { Text("Aplicar") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-    ) {
-        DateRangePicker(state = state, modifier = Modifier.weight(1f))
     }
 }
 
