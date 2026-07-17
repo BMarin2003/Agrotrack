@@ -62,7 +62,7 @@ fun ReportsScreen(
         runCatching {
             context.contentResolver.openOutputStream(uri)?.use { out ->
                 if (uiState.downloadFormat == DownloadFormat.PDF) {
-                    val doc = ReportPdfBuilder.build(viewModel.periodLabel(), viewModel.exportSensorRows())
+                    val doc = ReportPdfBuilder.buildSensorLevel(viewModel.periodLabel(), viewModel.exportSensorRows())
                     doc.writeTo(out)
                     doc.close()
                 } else {

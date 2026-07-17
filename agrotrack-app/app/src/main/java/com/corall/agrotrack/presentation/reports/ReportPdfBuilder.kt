@@ -25,7 +25,7 @@ private const val BLOCK_HEIGHT = 190f
  */
 object ReportPdfBuilder {
 
-    fun build(periodLabel: String, sensors: List<Pair<Sensor, List<SensorReading>>>): PdfDocument {
+    fun buildSensorLevel(periodLabel: String, sensors: List<Pair<Sensor, List<SensorReading>>>): PdfDocument {
         val doc = PdfDocument()
         var pageNumber = 1
         var page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
@@ -46,6 +46,99 @@ object ReportPdfBuilder {
                 y = drawHeader(canvas, MARGIN, periodLabel, isFirstPage = false)
             }
             y = drawSensorBlock(canvas, y, sensor, readings)
+        }
+
+        drawFooter(canvas, pageNumber)
+        doc.finishPage(page)
+        return doc
+    }
+
+    fun buildGatewayLevel(periodLabel: String, report: com.corall.agrotrack.domain.model.GatewayReport): PdfDocument {
+        val doc = PdfDocument()
+        var pageNumber = 1
+        var page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+        var canvas = page.canvas
+        var y = drawHeader(canvas, MARGIN, periodLabel, isFirstPage = true)
+
+        canvas.drawText(report.gatewayName, MARGIN, y + 16f, sectionPaint())
+        y += 22f
+        if (report.gatewayLocation.isNotBlank()) {
+            canvas.drawText(report.gatewayLocation, MARGIN, y + 10f, subtitlePaint())
+            y += 16f
+        }
+        canvas.drawText(
+            "Mínima: %.1f°C     Promedio: %.1f°C     Máxima: %.1f°C".format(
+                report.tempMin ?: 0.0, report.tempAvg ?: 0.0, report.tempMax ?: 0.0,
+            ),
+            MARGIN, y + 12f, bodyPaint(),
+        )
+        y += 18f
+        canvas.drawText(
+            "${report.sensorCount} sensores · ${report.readingCount} lecturas · ${report.alertsTotal} alertas (${report.alertsUnresolved} sin resolver)",
+            MARGIN, y + 10f, smallPaint(),
+        )
+        y += 20f
+        canvas.drawLine(MARGIN, y, MARGIN + CONTENT_W, y, dividerPaint())
+        y += 18f
+
+        for (sensor in report.sensors) {
+            if (y + BLOCK_HEIGHT > PAGE_HEIGHT - MARGIN - 24f) {
+                drawFooter(canvas, pageNumber)
+                doc.finishPage(page)
+                pageNumber++
+                page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+                canvas = page.canvas
+                y = drawHeader(canvas, MARGIN, periodLabel, isFirstPage = false)
+            }
+            y = drawSensorBlock(canvas, y, sensorPlaceholder(sensor.name), sensor.readings)
+        }
+
+        drawFooter(canvas, pageNumber)
+        doc.finishPage(page)
+        return doc
+    }
+
+    private fun sensorPlaceholder(name: String) = com.corall.agrotrack.domain.model.Sensor(
+        id = 0, gatewayId = 0, gatewayName = "", name = name, identifier = "",
+        type = "temperature", unit = "°C", location = "", enable = true,
+    )
+
+    fun buildGeneralLevel(periodLabel: String, report: com.corall.agrotrack.domain.model.GeneralReport): PdfDocument {
+        val doc = PdfDocument()
+        var pageNumber = 1
+        var page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+        var canvas = page.canvas
+        var y = drawHeader(canvas, MARGIN, periodLabel, isFirstPage = true)
+
+        canvas.drawText(
+            "${report.totalGatewayCount} gateways · ${report.totalSensorCount} sensores · ${report.totalAlertCount} alertas en el período",
+            MARGIN, y + 12f, bodyPaint(),
+        )
+        y += 24f
+
+        val rowHeight = 58f
+        for (row in report.gateways) {
+            if (y + rowHeight > PAGE_HEIGHT - MARGIN - 24f) {
+                drawFooter(canvas, pageNumber)
+                doc.finishPage(page)
+                pageNumber++
+                page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+                canvas = page.canvas
+                y = drawHeader(canvas, MARGIN, periodLabel, isFirstPage = false)
+            }
+
+            canvas.drawText("${row.name}  ·  ${row.status.name}", MARGIN, y + 12f, sectionPaint())
+            y += 16f
+            val tempText = if (row.tempAvg != null) {
+                "Prom: %.1f°C (mín %.1f / máx %.1f)".format(row.tempAvg, row.tempMin ?: 0.0, row.tempMax ?: 0.0)
+            } else "Sin lecturas en el período"
+            canvas.drawText(
+                "$tempText   ·   ${row.sensorCount} sensores   ·   ${row.alertsTotal} alertas (${row.alertsUnresolved} sin resolver)",
+                MARGIN, y + 10f, bodyPaint(),
+            )
+            y += 18f
+            canvas.drawLine(MARGIN, y, MARGIN + CONTENT_W, y, dividerPaint())
+            y += 16f
         }
 
         drawFooter(canvas, pageNumber)
