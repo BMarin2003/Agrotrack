@@ -299,7 +299,7 @@ private fun SensorMultiSelect(
 }
 
 @Composable
-private fun DownloadSection(
+fun DownloadSection(
     format:     DownloadFormat,
     error:      String?,
     onFormat:   (DownloadFormat) -> Unit,
@@ -341,7 +341,7 @@ private fun DownloadSection(
 }
 
 @Composable
-private fun SummaryCard(readings: List<SensorReading>) {
+fun SummaryCard(readings: List<SensorReading>) {
     val temps = readings.mapNotNull { it.temperature }
     if (temps.isEmpty()) return
     val min = temps.min()
@@ -369,7 +369,7 @@ private fun StatItem(label: String, value: Double, color: Color) {
 }
 
 @Composable
-private fun SparklineChart(readings: List<SensorReading>) {
+fun SparklineChart(readings: List<SensorReading>) {
     val temps = readings.mapNotNull { it.temperature?.toFloat() }
     if (temps.size < 2) return
 
