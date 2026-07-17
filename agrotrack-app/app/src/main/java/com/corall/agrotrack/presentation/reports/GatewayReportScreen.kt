@@ -44,6 +44,8 @@ fun GatewayReportScreen(viewModel: GatewayReportViewModel = hiltViewModel()) {
                 if (uiState.downloadFormat == DownloadFormat.PDF) {
                     val report = uiState.report
                     if (report != null) {
+                        // TEMP: Placeholder Sensor object scaffolding for current ReportPdfBuilder.build signature.
+                        // Will be removed when ReportPdfBuilder.buildGatewayLevel() replaces this call (Task 9).
                         val sensors = report.sensors.map { s ->
                             com.corall.agrotrack.domain.model.Sensor(
                                 id = s.sensorId, gatewayId = report.gatewayId, gatewayName = report.gatewayName,
