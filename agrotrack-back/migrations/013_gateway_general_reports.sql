@@ -63,7 +63,7 @@ BEGIN
   ) INTO v_summary
   FROM iot.sensor_readings r
   JOIN iot.sensors s ON s.id = r.sensor_id
-  WHERE s.gateway_id = v_gateway_id AND r.received_at BETWEEN v_from AND v_to;
+  WHERE s.gateway_id = v_gateway_id AND s.enable = TRUE AND r.received_at BETWEEN v_from AND v_to;
 
   SELECT JSON_BUILD_OBJECT(
     'total', COUNT(*),

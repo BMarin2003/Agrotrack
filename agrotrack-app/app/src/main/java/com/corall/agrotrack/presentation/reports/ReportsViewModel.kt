@@ -124,7 +124,7 @@ class ReportsViewModel @Inject constructor(
     fun periodLabel(): String {
         val state = _uiState.value
         return if (state.isCustomRange) {
-            val fmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val fmt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             "${fmt.format(Date(state.customFrom!!))} — ${fmt.format(Date(state.customTo!!))}"
         } else when (state.range) {
             "7d"  -> "Últimos 7 días"
