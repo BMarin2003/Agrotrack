@@ -12,6 +12,10 @@ export default defineConfig({
 					label: 'Arquitectura',
 					items: [{ autogenerate: { directory: 'arquitectura' } }],
 				},
+				{
+					label: 'Pruebas',
+					items: [{ autogenerate: { directory: 'pruebas' } }],
+				},
 			],
 		}),
 	],
