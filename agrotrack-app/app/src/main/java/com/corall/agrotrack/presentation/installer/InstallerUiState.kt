@@ -14,6 +14,7 @@ data class InstallerUiState(
     // WiFi
     val ssid:              String        = "",
     val password:          String        = "",
+    val security:          String        = "WPA2",
     val isSaving:          Boolean       = false,
     val success:           Boolean       = false,
     // Verificación post-guardado: ¿el gateway realmente volvió a reportar datos?

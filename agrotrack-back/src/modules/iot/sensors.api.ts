@@ -281,6 +281,7 @@ export const SensorsApi = new Elysia().group(path, (app) =>
           {
             id: parseInt(params.id),
             ssid: (body as any).ssid,
+            password: (body as any).password ?? null,
             security: (body as any).security ?? "WPA2",
           },
         ]);

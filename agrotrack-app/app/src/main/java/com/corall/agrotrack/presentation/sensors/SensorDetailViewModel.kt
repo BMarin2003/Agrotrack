@@ -7,10 +7,13 @@ import com.corall.agrotrack.domain.model.SensorStatus
 import com.corall.agrotrack.domain.repository.GatewayRepository
 import com.corall.agrotrack.domain.repository.TelemetryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,11 +29,27 @@ class SensorDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SensorDetailUiState())
     val uiState: StateFlow<SensorDetailUiState> = _uiState.asStateFlow()
 
-    init { load() }
+    private var pollingJob: Job? = null
 
-    fun load() {
+    init { startPolling() }
+
+    private fun startPolling() {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            load(isInitialLoad = true)
+            while (isActive) {
+                delay(10_000)
+                load(isInitialLoad = false)
+            }
+        }
+    }
+
+    /** Refresco manual (ej. pull-to-refresh) — no reinicia el ciclo de polling automático. */
+    fun refresh() = load(isInitialLoad = false)
+
+    private fun load(isInitialLoad: Boolean) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            if (isInitialLoad) _uiState.update { it.copy(isLoading = true, error = null) }
 
             val sensor  = gatewayRepo.getSensorById(sensorId).getOrNull()
             val reading = telemetryRepo.getLastReading(sensorId).getOrNull()

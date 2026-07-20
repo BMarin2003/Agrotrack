@@ -27,6 +27,8 @@ private val CardBg = Color(0xFF132238)
 private val Green  = Color(0xFF22C55E)
 private val Red    = Color(0xFFEF4444)
 
+private val SECURITY_OPTIONS = listOf("WPA2", "WPA3", "open")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstallerScreen(
@@ -35,6 +37,7 @@ fun InstallerScreen(
 ) {
     val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
     var gatewayExpanded by remember { mutableStateOf(false) }
+    var securityExpanded by remember { mutableStateOf(false) }
 
     AgroGradient {
         Column(
@@ -138,6 +141,32 @@ fun InstallerScreen(
                 colors               = fieldColors,
                 modifier             = Modifier.fillMaxWidth(),
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            ExposedDropdownMenuBox(expanded = securityExpanded, onExpandedChange = { securityExpanded = it }) {
+                OutlinedTextField(
+                    value         = uiState.security,
+                    onValueChange = {},
+                    readOnly      = true,
+                    label         = { Text("Seguridad") },
+                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = securityExpanded) },
+                    colors        = fieldColors,
+                    modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                )
+                ExposedDropdownMenu(
+                    expanded         = securityExpanded,
+                    onDismissRequest = { securityExpanded = false },
+                    containerColor   = CardBg,
+                ) {
+                    SECURITY_OPTIONS.forEach { option ->
+                        DropdownMenuItem(
+                            text    = { Text(option, color = White) },
+                            onClick = { viewModel.onSecurityChange(option); securityExpanded = false },
+                        )
+                    }
+                }
+            }
 
             uiState.error?.let { Text(it, color = Red, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
             when {

@@ -39,6 +39,7 @@ class InstallerViewModel @Inject constructor(
     fun selectGateway(id: Int) = _uiState.update { it.copy(selectedGatewayId = id, success = false, error = null) }
     fun onSsidChange(v: String)     = _uiState.update { it.copy(ssid     = v, success  = false, error    = null) }
     fun onPasswordChange(v: String) = _uiState.update { it.copy(password = v) }
+    fun onSecurityChange(v: String) = _uiState.update { it.copy(security = v) }
 
     fun submitWifi() {
         val s = _uiState.value
@@ -47,7 +48,7 @@ class InstallerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null, success = false, confirmed = false) }
             val beforeReadingAt = gatewayRepo.getGatewayById(gatewayId).getOrNull()?.lastReadingAt
-            gatewayRepo.updateGatewayWifi(gatewayId, s.ssid.trim(), s.password.ifBlank { null }, "WPA2")
+            gatewayRepo.updateGatewayWifi(gatewayId, s.ssid.trim(), s.password.ifBlank { null }, s.security)
                 .onSuccess {
                     _uiState.update { it.copy(isSaving = false, success = true, verifying = true) }
                     verifyConnection(gatewayId, beforeReadingAt)
