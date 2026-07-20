@@ -41,8 +41,9 @@ export const ThresholdsApi = new Elysia()
       }),
     })
 
-    .delete('/:id', async ({ params, set }) => {
-      const result = await execProcedure('iot.delete_threshold', [{ id: parseInt(params.id) }]);
+    .delete('/:id', async ({ params, user, set }) => {
+      const userId = (user as any).isAdmin ? null : (user as any).id;
+      const result = await execProcedure('iot.delete_threshold', [{ id: parseInt(params.id), user_id: userId }]);
       if (result.error) { set.status = 400; return { message: result.error }; }
       return result.result;
     }, { requirePermission: PERMISSIONS.iot.manage_thresholds })
