@@ -8,6 +8,10 @@ export default defineConfig({
 			title: 'Agrotrack — Manual Técnico',
 			sidebar: [
 				{ label: 'Introducción', slug: 'introduccion' },
+				{
+					label: 'Arquitectura',
+					items: [{ autogenerate: { directory: 'arquitectura' } }],
+				},
 			],
 		}),
 	],
