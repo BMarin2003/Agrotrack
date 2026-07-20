@@ -141,6 +141,6 @@ Repetir para las 3 cuentas (`operador@agrotrack.com`, `tecnico@agrotrack.com`, `
 
 ## Verificación
 
-- `curl https://api.agrotrack.corall.pe/api/auth/login` con las credenciales ya cambiadas debe devolver un token (200).
+- Repetir el comando de login (`POST /api/auth/login`) con la contraseña ya cambiada debe devolver un token (200).
 - Iniciar sesión desde la app Android (ver [Compilar y distribuir la app Android](/despliegue/app-android/)) y confirmar que el Dashboard carga.
 - Si hay un gateway físico transmitiendo, confirmar que su lectura llega en tiempo real al Dashboard (WebSocket funcionando de extremo a extremo).
