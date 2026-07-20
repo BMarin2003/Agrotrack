@@ -65,23 +65,51 @@ describe("Caja negra — GET/PUT /sensors/:id/alias", () => {
   it("guarda un alias y lo puede volver a leer (round-trip)", async () => {
     const token = await getToken("operador");
     const id = await firstSensorId(token);
-    const alias = `Alias de prueba ${Date.now()}`;
 
-    const putRes = await routerApi.handle(
-      new Request(`http://localhost/sensors/${id}/alias`, {
-        method: "PUT",
-        headers: authHeaders(token),
-        body: JSON.stringify({ alias }),
-      }),
-    );
-    expect(putRes.status).toBe(200);
-
-    const getRes = await routerApi.handle(
+    // El sensor usado aquí es real (compartido con la app) y el alias está
+    // scopeado al usuario `operador`. Leemos el valor original ANTES de
+    // sobreescribirlo para poder restaurarlo al final y no dejar un string
+    // de prueba visible permanentemente en la app.
+    const originalGetRes = await routerApi.handle(
       new Request(`http://localhost/sensors/${id}/alias`, { headers: authHeaders(token) }),
     );
-    expect(getRes.status).toBe(200);
-    const body = await getRes.json();
-    expect(body.alias).toBe(alias);
+    expect(originalGetRes.status).toBe(200);
+    const originalAlias: string | null = (await originalGetRes.json()).alias ?? null;
+
+    try {
+      const alias = `Alias de prueba ${Date.now()}`;
+
+      const putRes = await routerApi.handle(
+        new Request(`http://localhost/sensors/${id}/alias`, {
+          method: "PUT",
+          headers: authHeaders(token),
+          body: JSON.stringify({ alias }),
+        }),
+      );
+      expect(putRes.status).toBe(200);
+
+      const getRes = await routerApi.handle(
+        new Request(`http://localhost/sensors/${id}/alias`, { headers: authHeaders(token) }),
+      );
+      expect(getRes.status).toBe(200);
+      const body = await getRes.json();
+      expect(body.alias).toBe(alias);
+    } finally {
+      // Restaurar el alias original incluso si alguna aserción falló arriba.
+      // El body de PUT /alias exige minLength: 1 (ver sensors.api.ts), así
+      // que si el sensor nunca tuvo alias (originalAlias === null) no hay
+      // forma de "restaurar null" por este endpoint — en ese caso no queda
+      // otra que dejarlo como no-op documentado.
+      if (originalAlias !== null) {
+        await routerApi.handle(
+          new Request(`http://localhost/sensors/${id}/alias`, {
+            method: "PUT",
+            headers: authHeaders(token),
+            body: JSON.stringify({ alias: originalAlias }),
+          }),
+        );
+      }
+    }
   });
 
   it("alias vacío devuelve error de validación (422, minLength: 1)", async () => {
@@ -121,19 +149,15 @@ describe("Caja negra — GET/POST /sensors/:id/calibration", () => {
     expect(res.status).toBe(403);
   });
 
-  it("técnico calibra un sensor exitosamente (200)", async () => {
-    const token = await getToken("tecnico");
-    const id = await firstSensorId(token);
-    const res = await routerApi.handle(
-      new Request(`http://localhost/sensors/${id}/calibration`, {
-        method: "POST",
-        headers: authHeaders(token),
-        body: JSON.stringify({ gain: 1.02, intercept: -0.15, notes: "Calibración de prueba caja negra" }),
-      }),
-    );
-    expect(res.status).toBe(200);
-  });
-
+  // NOTA: no hay caso "técnico calibra un sensor exitosamente (200)" a propósito.
+  // `iot.save_calibration` (migrations/009_calibration_ack.sql:26-36) es un INSERT
+  // puro sin dedup ni cleanup, y `iot.get_calibration` siempre devuelve la fila
+  // más reciente (ORDER BY c.applied_at DESC LIMIT 1). Un POST exitoso contra el
+  // primer sensor real de la BD dejaría una calibración falsa como "la actual"
+  // del sensor para cualquier usuario real que lo consulte en la app — de forma
+  // permanente y sin manera de deshacerlo — y además el route intenta publicar
+  // un comando MQTT real al gateway físico. Por eso este archivo solo prueba
+  // los caminos negativos (permisos/validación), que nunca llegan al INSERT.
   it("gain no numérico devuelve error de validación (422)", async () => {
     const token = await getToken("tecnico");
     const id = await firstSensorId(token);
