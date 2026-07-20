@@ -144,14 +144,14 @@ private fun SensorReportTab(viewModel: ReportsViewModel = hiltViewModel()) {
         Spacer(Modifier.height(16.dp))
 
         if (!uiState.hasGenerated) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Configura los filtros y genera el reporte", color = Muted, fontSize = 14.sp)
             }
             return@Column
         }
 
         if (uiState.isLoadingReport) {
-            LoadingState()
+            Box(Modifier.fillMaxWidth().weight(1f)) { LoadingState() }
             return@Column
         }
 
@@ -162,7 +162,7 @@ private fun SensorReportTab(viewModel: ReportsViewModel = hiltViewModel()) {
 
         val reports = uiState.reports
         if (reports.values.all { it.isEmpty() }) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Sin datos para el período seleccionado", color = Muted, fontSize = 14.sp)
             }
             return@Column
@@ -190,7 +190,7 @@ private fun SensorReportTab(viewModel: ReportsViewModel = hiltViewModel()) {
             Spacer(Modifier.height(8.dp))
 
             LazyColumn(
-                modifier            = Modifier.fillMaxSize(),
+                modifier            = Modifier.fillMaxWidth().weight(1f),
                 contentPadding      = PaddingValues(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -200,7 +200,7 @@ private fun SensorReportTab(viewModel: ReportsViewModel = hiltViewModel()) {
             }
         } else {
             LazyColumn(
-                modifier            = Modifier.fillMaxSize(),
+                modifier            = Modifier.fillMaxWidth().weight(1f),
                 contentPadding      = PaddingValues(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -252,10 +252,12 @@ fun ReportsScreen(onBack: () -> Unit) {
                 }
             }
 
-            when (selectedTab) {
-                0 -> SensorReportTab()
-                1 -> GatewayReportScreen()
-                2 -> GeneralReportScreen()
+            Box(modifier = Modifier.weight(1f)) {
+                when (selectedTab) {
+                    0 -> SensorReportTab()
+                    1 -> GatewayReportScreen()
+                    2 -> GeneralReportScreen()
+                }
             }
         }
     }

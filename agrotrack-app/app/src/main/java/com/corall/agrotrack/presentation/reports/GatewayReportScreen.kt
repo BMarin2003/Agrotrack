@@ -125,18 +125,21 @@ fun GatewayReportScreen(viewModel: GatewayReportViewModel = hiltViewModel()) {
         Spacer(Modifier.height(16.dp))
 
         if (!uiState.hasGenerated) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Configura los filtros y genera el reporte", color = Muted, fontSize = 14.sp)
             }
             return@Column
         }
-        if (uiState.isLoadingReport) { LoadingState(); return@Column }
+        if (uiState.isLoadingReport) {
+            Box(Modifier.fillMaxWidth().weight(1f)) { LoadingState() }
+            return@Column
+        }
 
         uiState.error?.let { Text(it, color = Red, fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp)) }
 
         val report = uiState.report
         if (report == null || report.readingCount == 0) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Sin datos para el período seleccionado", color = Muted, fontSize = 14.sp)
             }
             return@Column
@@ -173,7 +176,7 @@ fun GatewayReportScreen(viewModel: GatewayReportViewModel = hiltViewModel()) {
 
         Spacer(Modifier.height(16.dp))
 
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             items(report.sensors, key = { it.sensorId }) { sensor ->
                 Column {
                     Text(sensor.name, color = White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)

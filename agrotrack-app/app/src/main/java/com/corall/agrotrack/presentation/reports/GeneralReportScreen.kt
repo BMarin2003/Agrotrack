@@ -95,17 +95,20 @@ fun GeneralReportScreen(viewModel: GeneralReportViewModel = hiltViewModel()) {
         Spacer(Modifier.height(16.dp))
 
         if (!uiState.hasGenerated) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Genera el reporte general de todos los gateways", color = Muted, fontSize = 14.sp)
             }
             return@Column
         }
-        if (uiState.isLoadingReport) { LoadingState(); return@Column }
+        if (uiState.isLoadingReport) {
+            Box(Modifier.fillMaxWidth().weight(1f)) { LoadingState() }
+            return@Column
+        }
         uiState.error?.let { Text(it, color = Red, fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp)) }
 
         val report = uiState.report
         if (report == null || report.gateways.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("Sin gateways registrados", color = Muted, fontSize = 14.sp)
             }
             return@Column
@@ -133,7 +136,7 @@ fun GeneralReportScreen(viewModel: GeneralReportViewModel = hiltViewModel()) {
 
         Spacer(Modifier.height(16.dp))
 
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(report.gateways, key = { it.gatewayId }) { row -> GatewayRow(row) }
         }
     }

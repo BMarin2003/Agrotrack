@@ -28,6 +28,10 @@ const ANOMALY_DEGRADED_COUNT = 5;
 class RulesEngine {
   private lastTemperatures = new Map<number, number>();
   private anomalyWindows   = new Map<number, number[]>();
+  // Condiciones de alerta ya disparadas y aún no resueltas (sensorId:type[:metric]),
+  // para no insertar una fila nueva en cada lectura mientras la condición persiste —
+  // mismo patrón que watchdog.service.ts usa para sensor_offline/sensor_recovered.
+  private activeBreaches   = new Set<string>();
 
   async evaluate(reading: Reading) {
     const thresholdsResult = await execProcedure('iot.get_thresholds_for_sensor', [{ sensor_id: reading.sensor_id }]);
@@ -41,6 +45,7 @@ class RulesEngine {
         const value = reading[threshold.metric as keyof Reading] as number | undefined;
         if (value === undefined || value === null) continue;
 
+        const breachKey = `${reading.sensor_id}:threshold_exceeded:${threshold.metric}`;
         let breached = false;
         let message  = '';
 
@@ -53,18 +58,23 @@ class RulesEngine {
         }
 
         if (breached) {
-          await this.triggerAlert({
-            sensor_id: reading.sensor_id,
-            gateway_id: reading.gateway_id,
-            user_id: threshold.user_id,
-            type: 'threshold_exceeded',
-            metric: threshold.metric,
-            value,
-            threshold: threshold.min_value !== null && value < threshold.min_value
-              ? threshold.min_value
-              : threshold.max_value!,
-            message,
-          });
+          if (!this.activeBreaches.has(breachKey)) {
+            this.activeBreaches.add(breachKey);
+            await this.triggerAlert({
+              sensor_id: reading.sensor_id,
+              gateway_id: reading.gateway_id,
+              user_id: threshold.user_id,
+              type: 'threshold_exceeded',
+              metric: threshold.metric,
+              value,
+              threshold: threshold.min_value !== null && value < threshold.min_value
+                ? threshold.min_value
+                : threshold.max_value!,
+              message,
+            });
+          }
+        } else {
+          this.activeBreaches.delete(breachKey);
         }
       }
     }
@@ -78,22 +88,26 @@ class RulesEngine {
     const prev         = this.lastTemperatures.get(sensorId);
     const isOutOfRange = temperature < ANOMALY_MIN_C || temperature > ANOMALY_MAX_C;
     const isDeltaSpike = prev !== undefined && Math.abs(temperature - prev) > ANOMALY_DELTA_C;
+    const breachKey    = `${sensorId}:anomalous_reading`;
 
     if (isOutOfRange || isDeltaSpike) {
-      const message = isOutOfRange
-        ? `Lectura fuera de rango físico: T=${temperature}°C (rango válido: ${ANOMALY_MIN_C}°C – ${ANOMALY_MAX_C}°C)`
-        : `Salto de temperatura anómalo: ${prev}°C → ${temperature}°C (delta: ${Math.abs(temperature - prev!).toFixed(1)}°C)`;
+      if (!this.activeBreaches.has(breachKey)) {
+        this.activeBreaches.add(breachKey);
+        const message = isOutOfRange
+          ? `Lectura fuera de rango físico: T=${temperature}°C (rango válido: ${ANOMALY_MIN_C}°C – ${ANOMALY_MAX_C}°C)`
+          : `Salto de temperatura anómalo: ${prev}°C → ${temperature}°C (delta: ${Math.abs(temperature - prev!).toFixed(1)}°C)`;
 
-      await this.triggerAlert({
-        sensor_id: sensorId,
-        gateway_id: gatewayId,
-        user_id: null,
-        type: 'anomalous_reading',
-        metric: 'temperature',
-        value: temperature,
-        threshold: prev,
-        message,
-      });
+        await this.triggerAlert({
+          sensor_id: sensorId,
+          gateway_id: gatewayId,
+          user_id: null,
+          type: 'anomalous_reading',
+          metric: 'temperature',
+          value: temperature,
+          threshold: prev,
+          message,
+        });
+      }
 
       const now    = Date.now();
       const window = (this.anomalyWindows.get(sensorId) ?? []).filter(t => now - t < ANOMALY_WINDOW_MS);
@@ -112,6 +126,7 @@ class RulesEngine {
         });
       }
     } else {
+      this.activeBreaches.delete(breachKey);
       this.lastTemperatures.set(sensorId, temperature);
     }
   }
