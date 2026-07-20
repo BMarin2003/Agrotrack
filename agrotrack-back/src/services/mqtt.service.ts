@@ -150,11 +150,6 @@ class MqttService {
     try {
       const { topicSubscribe, gatewayUid } = configServer.mqtt;
 
-      // TEMPORAL — quitar una vez confirmado qué claves manda el gateway real
-      // (voltaje, ConnMode, PendingSync). Loguea el JSON tal cual llega, sin
-      // pasar por la interfaz TwarmPayload, para no ocultar campos inesperados.
-      console.log(`[MQTT][DEBUG PAYLOAD] topic=${topic} raw=${rawMessage.toString()}`);
-
       const payload: TwarmPayload = JSON.parse(rawMessage.toString());
 
       let gatewayIdentifier: string;
