@@ -32,8 +32,8 @@ class BatteryWarningLevelTest {
     }
 
     @Test
-    fun `voltaje exactamente 3_3V es critico (limite no inclusivo hacia abajo)`() {
-        assertEquals(Level.CRITICAL, batteryWarningLevel(3.3))
+    fun `voltaje exactamente 3_3V es bajo, no critico (limite no inclusivo hacia abajo)`() {
+        assertEquals(Level.LOW, batteryWarningLevel(3.3))
     }
 
     @Test
