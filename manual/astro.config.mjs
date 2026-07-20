@@ -6,7 +6,9 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Agrotrack — Manual Técnico',
-			sidebar: [],
+			sidebar: [
+				{ label: 'Introducción', slug: 'introduccion' },
+			],
 		}),
 	],
 });
