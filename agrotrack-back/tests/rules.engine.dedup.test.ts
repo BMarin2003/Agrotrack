@@ -23,7 +23,7 @@ describe("Caja blanca — RulesEngine.evaluate: deduplicación de alertas por um
     // Se reemplaza triggerAlert por un espía que solo registra la llamada,
     // sin tocar la BD real — aísla la rama de decisión "¿ya está activa la
     // condición?" del efecto de persistencia.
-    (rulesEngine as any).triggerAlert = mock(async (alert: any) => {
+    spyOn(rulesEngine, "triggerAlert").mockImplementation(async (alert: any) => {
       triggerCalls.push(alert);
     });
     // Se limpia el estado interno de umbrales activos entre tests para que
