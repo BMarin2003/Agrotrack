@@ -16,6 +16,10 @@ export default defineConfig({
 					label: 'Pruebas',
 					items: [{ autogenerate: { directory: 'pruebas' } }],
 				},
+				{
+					label: 'Historias de usuario',
+					items: [{ autogenerate: { directory: 'historias-de-usuario' } }],
+				},
 			],
 		}),
 	],
