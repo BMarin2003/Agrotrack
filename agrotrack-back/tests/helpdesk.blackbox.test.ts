@@ -69,5 +69,15 @@ describe("Caja negra — GET/POST/PUT /helpdesk/tickets", () => {
       }),
     );
     expect(res.status).toBe(422);
+
+    // Cleanup: close the synthetic ticket to avoid leaving it open in the real help desk
+    const cleanupRes = await routerApi.handle(
+      new Request(`http://localhost/helpdesk/tickets/${ticketId}/status`, {
+        method: "PUT",
+        headers: authHeaders(token),
+        body: JSON.stringify({ status: "cerrado" }),
+      }),
+    );
+    expect(cleanupRes.status).toBe(200);
   });
 });
