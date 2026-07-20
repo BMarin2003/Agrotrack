@@ -20,6 +20,10 @@ export default defineConfig({
 					label: 'Historias de usuario',
 					items: [{ autogenerate: { directory: 'historias-de-usuario' } }],
 				},
+				{
+					label: 'Despliegue',
+					items: [{ autogenerate: { directory: 'despliegue' } }],
+				},
 			],
 		}),
 	],
