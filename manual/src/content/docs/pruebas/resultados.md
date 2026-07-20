@@ -53,7 +53,7 @@ El comentario en el código dice exactamente:
 |---|---|---|---|
 | `tests/rules.engine.dedup.test.ts` | Deduplicación de alertas (primera vez / ya activa / resuelta / métricas independientes) — lógica agregada en `rules.engine.ts` esta sesión | 4 | 4 pass |
 | `tests/watchdog.dedup.test.ts` | Deduplicación de alertas de recuperación tras offline | 2 | 2 pass |
-| `tests/gateway.service.step.test.ts` | Curva de enfriamiento simulada: decaimiento, reinicio de ciclo, límites físicos | 3 | 3 pass |
+| `tests/gateway.service.step.test.ts` | Transición de estado térmico interno: progreso hacia un valor objetivo, reinicio de ciclo, límites físicos configurados (clamp) | 3 | 3 pass |
 
 **Total caja blanca:** 9 pass
 

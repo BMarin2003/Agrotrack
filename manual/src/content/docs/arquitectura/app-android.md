@@ -85,3 +85,4 @@ Esta simetría de sufijos (`...Screen`/`...ViewModel`/`...UiState` para la misma
 | Clean Architecture | MVVM sin separación domain/data | Aislar el modelo de negocio de los detalles de red/BD |
 | Hilt | Koin / Service Locator manual | Grafo de dependencias verificado en compile-time |
 | StateFlow | LiveData | Nativo de coroutines, sin valor `null` inicial, idiomático en Compose |
+| WebSocket a nivel de sesión | WebSocket atado a la pantalla Dashboard | Notificaciones en tiempo real disponibles en toda la app, no solo en una pantalla |
