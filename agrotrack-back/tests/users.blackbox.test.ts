@@ -41,53 +41,80 @@ describe("Caja negra — POST/PUT/DELETE /users (ciclo de vida completo)", () =>
   it("admin crea, edita, deshabilita y borra un usuario de prueba", async () => {
     const token = await getToken("admin");
     const uniqueEmail = `test-caja-negra-${Date.now()}@agrotrack.com`;
+    let userId: number | null = null;
 
-    const createRes = await routerApi.handle(
-      new Request("http://localhost/users", {
-        method: "POST",
-        headers: authHeaders(token),
-        body: JSON.stringify({
-          names: "Usuario De Prueba Caja Negra",
-          email: uniqueEmail,
-          password: "PasswordTemporal123",
+    try {
+      const createRes = await routerApi.handle(
+        new Request("http://localhost/users", {
+          method: "POST",
+          headers: authHeaders(token),
+          body: JSON.stringify({
+            names: "Usuario De Prueba Caja Negra",
+            email: uniqueEmail,
+            password: "PasswordTemporal123",
+          }),
         }),
-      }),
-    );
-    expect(createRes.status).toBe(200);
-    const created = await createRes.json();
-    expect(created.id).toBeDefined();
-    const userId = created.id;
+      );
+      expect(createRes.status).toBe(200);
+      const created = await createRes.json();
+      expect(created.id).toBeDefined();
+      userId = created.id;
 
-    const updateRes = await routerApi.handle(
-      new Request(`http://localhost/users/${userId}`, {
-        method: "PUT",
-        headers: authHeaders(token),
-        body: JSON.stringify({ names: "Nombre Editado" }),
-      }),
-    );
-    expect(updateRes.status).toBe(200);
-    const updated = await updateRes.json();
-    expect(updated.id).toBe(userId);
+      const updateRes = await routerApi.handle(
+        new Request(`http://localhost/users/${userId}`, {
+          method: "PUT",
+          headers: authHeaders(token),
+          body: JSON.stringify({ names: "Nombre Editado" }),
+        }),
+      );
+      expect(updateRes.status).toBe(200);
+      const updated = await updateRes.json();
+      expect(updated.id).toBe(userId);
 
-    const disableRes = await routerApi.handle(
-      new Request(`http://localhost/users/${userId}`, {
-        method: "PUT",
-        headers: authHeaders(token),
-        body: JSON.stringify({ enable: false }),
-      }),
-    );
-    expect(disableRes.status).toBe(200);
+      const disableRes = await routerApi.handle(
+        new Request(`http://localhost/users/${userId}`, {
+          method: "PUT",
+          headers: authHeaders(token),
+          body: JSON.stringify({ enable: false }),
+        }),
+      );
+      expect(disableRes.status).toBe(200);
 
-    // Limpieza: borrar el usuario de prueba para no dejar basura en la BD real.
-    const deleteRes = await routerApi.handle(
-      new Request(`http://localhost/users/${userId}`, {
-        method: "DELETE",
-        headers: authHeaders(token),
-      }),
-    );
-    expect(deleteRes.status).toBe(200);
-    const deleted = await deleteRes.json();
-    expect(deleted.ok).toBe(true);
+      // Limpieza: soft-delete del usuario de prueba (establece enable=FALSE, sin remover el registro).
+      const deleteRes = await routerApi.handle(
+        new Request(`http://localhost/users/${userId}`, {
+          method: "DELETE",
+          headers: authHeaders(token),
+        }),
+      );
+      expect(deleteRes.status).toBe(200);
+      const deleted = await deleteRes.json();
+      expect(deleted.ok).toBe(true);
+
+      // Verificar que el soft-delete fué exitoso: el usuario debe aparecer en la lista con enable=false.
+      const listRes = await routerApi.handle(
+        new Request("http://localhost/users", { headers: authHeaders(token) }),
+      );
+      expect(listRes.status).toBe(200);
+      const usersList = await listRes.json();
+      const deletedUser = usersList.find((u: any) => u.id === userId);
+      expect(deletedUser).toBeDefined();
+      expect(deletedUser.enable).toBe(false);
+    } finally {
+      // Best-effort cleanup: asegurar que el usuario de prueba se elimine (soft-delete) incluso si alguna aserción falla.
+      if (userId) {
+        try {
+          await routerApi.handle(
+            new Request(`http://localhost/users/${userId}`, {
+              method: "DELETE",
+              headers: authHeaders(token),
+            }),
+          );
+        } catch {
+          // Ignore cleanup errors; they don't mask the original assertion failure.
+        }
+      }
+    }
   });
 
   it("crear usuario con password menor a 8 caracteres devuelve error de validación (422)", async () => {
