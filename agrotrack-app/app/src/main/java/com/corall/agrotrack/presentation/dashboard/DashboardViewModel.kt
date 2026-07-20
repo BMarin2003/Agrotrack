@@ -3,7 +3,6 @@ package com.corall.agrotrack.presentation.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.corall.agrotrack.core.network.WebSocketManager
-import com.corall.agrotrack.core.notification.AlertNotificationHelper
 import com.corall.agrotrack.core.security.SessionManager
 import com.corall.agrotrack.core.security.UserRole
 import com.corall.agrotrack.core.util.ConnectivityObserver
@@ -37,7 +36,6 @@ class DashboardViewModel @Inject constructor(
     private val getLatestReadings:    GetLatestReadingsUseCase,
     private val observeLive:          ObserveLiveReadingsUseCase,
     private val telemetryRepository:  TelemetryRepository,
-    private val notificationHelper:   AlertNotificationHelper,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -56,12 +54,15 @@ class DashboardViewModel @Inject constructor(
         observeWsState()
         observeLiveEvents()
         observeCachedData()
-        startPollingAndConnect()
+        startPolling()
     }
 
-    private fun startPollingAndConnect() {
-        wsManager.connect(DEFAULT_GATEWAY_ID)
-
+    // La conexión WS (connect/disconnect) la maneja SessionViewModel, con
+    // alcance de toda la sesión de la app — no solo mientras el usuario está
+    // en este screen — para que las notificaciones de alertas sigan llegando
+    // aunque navegue a otra pantalla. Dashboard solo observa el estado y las
+    // lecturas en vivo que ya llegan por esa conexión compartida.
+    private fun startPolling() {
         viewModelScope.launch {
             // carga inicial
             refreshReadings(isInitial = true)
@@ -117,10 +118,9 @@ class DashboardViewModel @Inject constructor(
                             refreshReadings()
                         }
                     }
-                    is LiveEvent.NewAlert -> {
-                        viewModelScope.launch { telemetryRepository.cacheAlert(event.data) }
-                        notificationHelper.showAlert(event.data)
-                    }
+                    // NewAlert (cachear + notificar) lo maneja SessionViewModel,
+                    // que vive fuera de este screen — ver comentario en startPolling().
+                    is LiveEvent.NewAlert -> Unit
                 }
             }
             .launchIn(viewModelScope)
@@ -151,10 +151,5 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             telemetryRepository.resolveAlert(alertId)
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        wsManager.disconnect()
     }
 }

@@ -47,6 +47,7 @@ fun AppNavGraph(
 
     LaunchedEffect(sessionResult) {
         if (sessionResult == SessionViewModel.VerifyResult.INVALID) {
+            sessionViewModel.disconnectLiveUpdates()
             navController.navigate(Screen.Login.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -59,6 +60,7 @@ fun AppNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
+                    sessionViewModel.connectLiveUpdates()
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -91,6 +93,7 @@ fun AppNavGraph(
                 },
                 // LogoutUseCase ya limpió la sesión; aquí solo navegamos
                 onLogout = {
+                    sessionViewModel.disconnectLiveUpdates()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -115,6 +118,7 @@ fun AppNavGraph(
                 },
                 onLogout = {
                     SessionManager.clearSession()
+                    sessionViewModel.disconnectLiveUpdates()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
