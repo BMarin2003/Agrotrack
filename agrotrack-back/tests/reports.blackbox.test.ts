@@ -48,7 +48,7 @@ describe("Caja negra — GET /reports/gateway/:id", () => {
     expect(body).toHaveProperty("sensors");
   });
 
-  it("gateway_id inexistente devuelve error (400, RAISE EXCEPTION del lado SQL)", async () => {
+  it("gateway_id inexistente devuelve error (500, RAISE EXCEPTION del lado SQL)", async () => {
     const token = await getToken("operador");
     const res = await routerApi.handle(
       new Request(`http://localhost/reports/gateway/99999999?from=${DAY_AGO}&to=${NOW}`, {
